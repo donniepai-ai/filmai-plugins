@@ -1,0 +1,14 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "ai.filmai/filmai",
+  "title": "電影大師 filmai",
+  "description": "AI film studio: shoot video, images and sound, review takes, audit scripts, quote before you shoot.",
+  "version": "1.0.0",
+  "websiteUrl": "https://filmai.ai",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://filmai.ai/api/mcp/mcp"
+    }
+  ]
+}

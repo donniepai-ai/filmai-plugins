@@ -1,0 +1,9 @@
+{
+  "name": "filmai",
+  "displayName": "電影大師",
+  "version": "1.0.0",
+  "description": "電影大師 filmai.ai:在 Claude 裡拍 AI 影片、出圖、配音,審片、健檢劇本、先報價再生成。OAuth 登入,不用金鑰。",
+  "author": { "name": "電影大師 filmai.ai", "url": "https://filmai.ai" },
+  "homepage": "https://filmai.ai",
+  "keywords": ["ai-video", "film", "director", "seedance", "storyboard", "mcp"]
+}

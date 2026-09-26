@@ -1,0 +1,17 @@
+{
+  "name": "filmai",
+  "description": "電影大師 filmai.ai 官方 plugin:讓 Claude 當你的劇組,在電影大師上拍 AI 影片、審片、健檢劇本。",
+  "owner": {
+    "name": "電影大師 filmai.ai",
+    "url": "https://filmai.ai"
+  },
+  "plugins": [
+    {
+      "name": "filmai",
+      "source": "./filmai",
+      "displayName": "電影大師",
+      "description": "連上電影大師的 MCP(OAuth 登入,不用金鑰),加上一份教 Claude 什麼時候該用哪支工具的導演指南。",
+      "version": "1.0.0"
+    }
+  ]
+}

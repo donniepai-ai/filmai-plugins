@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "filmai": {
+      "type": "http",
+      "url": "https://filmai.ai/api/mcp/mcp"
+    }
+  }
+}
