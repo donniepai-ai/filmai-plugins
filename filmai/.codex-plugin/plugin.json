@@ -12,9 +12,9 @@
   "interface": {
     "displayName": "電影大師 filmai",
     "shortDescription": "AI film studio for directors",
-    "longDescription": "filmai is an AI film studio for directors. Connect your filmai account and ask your agent to shoot a scene with your own cast, generate stills and sound, review takes, or audit a script. Every paid generation is quoted first and runs only after you confirm; credits come from your existing filmai plan (Auteur or above). Keep a consistent face across a whole film with actors from your casting library, see why takes get rejected, and get a structural diagnosis of any scene with the smallest fix.\n\n電影大師是給導演的 AI 片廠。連上你的電影大師帳號,就能請 agent 用你的定妝演員拍戲、出圖、配音、審片、健檢劇本。每一筆扣點的生成都先報價、你確認才送;點數來自你現有的電影大師方案(Auteur 以上)。",
+    "longDescription": "filmai is an AI film studio for directors. Connect your filmai account and ask your agent to shoot a scene with your own cast, generate stills and sound, review takes, or audit a script. Every generation runs only after you confirm it. Keep a consistent face across a whole film with actors from your casting library, see why takes get rejected (twins, look drift, position swaps, physics glitches), and get a structural diagnosis of any scene with the smallest fix.\n\n電影大師是給導演的 AI 片廠。連上你的電影大師帳號,就能請 agent 用你的定妝演員拍戲、出圖、配音、審片、健檢劇本。每一次生成都要你確認才會送出。",
     "developerName": "filmai",
-    "category": "Productivity",
+    "category": "Creativity",
     "capabilities": [
       "Read",
       "Write"
@@ -24,7 +24,7 @@
     "privacyPolicyURL": "https://filmai.ai/privacy",
     "termsOfServiceURL": "https://filmai.ai/terms",
     "defaultPrompt": [
-      "How many credits would ten 5-second shots cost me?",
+      "Write a shot prompt for a rainy neon-lit street chase.",
       "Audit the structure of this scene and tell me the weakest point.",
       "Review the takes in my latest project and list the ones to reshoot."
     ],
