@@ -43,4 +43,4 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 
 ## 連線
 
-第一次使用時在 Claude Code 跑 `/mcp`,選 `filmai` 登入電影大師並按「允許」。MCP 需要 Auteur 以上方案。
+第一次呼叫工具時,客戶端會帶使用者登入電影大師並按「允許」;沒有跳出登入,就請他到客戶端的 MCP / 連接器設定裡連線 filmai。需要 Auteur 以上方案。

@@ -1,0 +1,35 @@
+{
+  "name": "filmai",
+  "version": "1.1.0",
+  "description": "filmai AI film studio: shoot video, images and sound, review takes, audit scripts, and get a price quote before anything is generated.",
+  "author": {
+    "name": "filmai",
+    "url": "https://filmai.ai"
+  },
+  "homepage": "https://filmai.ai",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "電影大師 filmai",
+    "shortDescription": "AI film studio for directors",
+    "longDescription": "filmai is an AI film studio for directors. Connect your filmai account and ask your agent to shoot a scene with your own cast, generate stills and sound, review takes, or audit a script. Every paid generation is quoted first and runs only after you confirm; credits come from your existing filmai plan (Auteur or above). Keep a consistent face across a whole film with actors from your casting library, see why takes get rejected, and get a structural diagnosis of any scene with the smallest fix.\n\n電影大師是給導演的 AI 片廠。連上你的電影大師帳號,就能請 agent 用你的定妝演員拍戲、出圖、配音、審片、健檢劇本。每一筆扣點的生成都先報價、你確認才送;點數來自你現有的電影大師方案(Auteur 以上)。",
+    "developerName": "filmai",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://filmai.ai",
+    "supportURL": "https://filmai.ai/contact",
+    "privacyPolicyURL": "https://filmai.ai/privacy",
+    "termsOfServiceURL": "https://filmai.ai/terms",
+    "defaultPrompt": [
+      "How many credits would ten 5-second shots cost me?",
+      "Audit the structure of this scene and tell me the weakest point.",
+      "Review the takes in my latest project and list the ones to reshoot."
+    ],
+    "brandColor": "#0b0b0c",
+    "composerIcon": "./assets/composer-icon.png",
+    "logo": "./assets/logo.png"
+  }
+}

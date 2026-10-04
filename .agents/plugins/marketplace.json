@@ -1,0 +1,20 @@
+{
+  "name": "filmai",
+  "interface": {
+    "displayName": "電影大師 filmai"
+  },
+  "plugins": [
+    {
+      "name": "filmai",
+      "source": {
+        "source": "local",
+        "path": "./filmai"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

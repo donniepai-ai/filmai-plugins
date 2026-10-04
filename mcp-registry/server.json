@@ -3,7 +3,7 @@
   "name": "ai.filmai/filmai",
   "title": "電影大師 filmai",
   "description": "AI film studio: shoot video, images and sound, review takes, audit scripts, quote before you shoot.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "websiteUrl": "https://filmai.ai",
   "remotes": [
     {
