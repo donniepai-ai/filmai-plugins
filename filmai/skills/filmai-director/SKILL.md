@@ -1,11 +1,15 @@
 ---
 name: filmai-director
-description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影大師上拍 AI 影片、出圖、配音、審片、健檢劇本、編提示詞、報價,或提到「電影大師」「filmai」「開拍」「快拍」「暗房」「定妝」「審片」「重拍」時使用。Use when the user wants to shoot AI video, generate images or sound, review takes, audit a script, compile a video prompt, or get a price quote on filmai.ai.
+description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影大師上拍 AI 影片、出圖、配音、做會開口說話的數字替身、審片、健檢劇本、編提示詞、報價,或提到「電影大師」「filmai」「開拍」「快拍」「暗房」「定妝」「審片」「重拍」「數字替身」「口播」時使用。Use when the user wants to shoot AI video, generate images or sound, make a talking digital double from a portrait and an audio clip, review takes, audit a script, compile a video prompt, or get a price quote on filmai.ai.
 ---
 
 # 電影大師導演指南
 
 你是這位導演的劇組,電影大師是片廠。這份指南只教你**什麼時候呼叫哪支工具**;提示詞文法、戲劇結構的規則都在伺服器上,工具會直接回結果。
+
+## 剛連上:先介紹,再開工
+
+這個對話第一次用到電影大師、使用者又還沒說要做什麼時(剛連上、打招呼、問「能做什麼」),先 `get_balance`,用幾句話介紹能走的路線(工作室直接生成、大師數字替身、短片專案、廣告 / 電商、聲音,每條一句話加一個例子),再問他想做哪一條;支援選單的 client 可以請他點 `getting_started`。他選之前不要扣點或建專案。使用者一開口就給了明確任務,就跳過介紹直接做。
 
 ## 開工前先讀兩份現況
 
@@ -16,20 +20,30 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 
 | 想做的事 | 工具 |
 | --- | --- |
-| 不確定用哪支、某個流程怎麼走 | `help`(可帶 topic:studio / short_film / ad_ecom / sound / media / billing) |
+| 不確定用哪支、某個流程怎麼走 | `help`(可帶 topic:studio / digital_double / short_film / ad_ecom / sound / media / billing) |
 | 看餘額 | `get_balance` |
 | 算一批要花多少點 | `estimate_cost` |
 | 把一段描述變成送件提示詞 | `prompt_compile`;一場戲好幾個鏡頭用 `prompt_compile_batch` 一次編完。回 `sendable` 為 false 就照 `warnings` 修正後重編,不要直接送 |
-| 拍一支影片 | `quick_shoot_generate` → `job_status` 等到 ready |
+| 使用者想用說的改提示詞(「雨再大一點」) | `prompt_revise`:帶目前的稿與一句 `instruction`,回傳的 `threadId` 帶回來就接著改;免費次數用完(`dryRun` 看 `nextTurnCredits`)先報價再送 |
+| 拍一支影片 | `quick_shoot_generate` → `job_status` 等到 ready。`modelChoice: "kling-40"`(可靈 4.0)最長 30 秒、到 1080p,只收參考圖(≤10 張)、比例 16:9 / 9:16 / 1:1 / 21:9,提示詞先用 `prompt_compile` 帶同一個 modelChoice 編 |
 | 一場戲拆成好幾段、要接得上 | 見下方「同場連戲續拍」:`quick_shoot_generate` 帶 `firstFrameFromAssetId`;要先看尾幀用 `take_last_frame` |
 | 出一張圖 | `darkroom_generate` → `job_status` |
+| 讓照片裡的人開口說話 / 唱歌(口播、講解、獨白) | 人像與音訊先上傳(或用 `sound_generate` 生成旁白)→ `estimate_cost`(digital_double 項,帶音訊秒數)→ `digital_double_generate` → `job_status`。影片長度 = 音訊長度、畫面比例跟著人像;只用使用者有權使用的人像 |
 | 作品放進指定的工作室工作區 | 生成時帶 `workspaceName`(同名沿用、沒有就新建);或 `studio_workspaces_list` / `studio_workspace_create` 拿 id 再帶 `workspaceId` |
+| 同一部戲分場整理(第 1 場、第 2 場…) | 同一個工作區、每場一個資料夾:生成 / 上傳時帶 `workspaceName` + `folderName`(例:「哭替」+「第1場」),**不要一場開一個工作區**。已經生好的用 `studio_assets_move_to_folder` 移進夾子;`studio_folders_list` 看有哪些夾。已經被拆成好幾個工作區的,用 `studio_assets_move_to_workspace` 搬回同一個工作區(可同時帶 `folderName`) |
 | 對白 / 音效 / 旁白 | `list_voices` → `sound_generate`(同步回來,不必輪 `job_status`) |
 | 健檢劇本或一場戲 | `scene_audit` |
 | 審片、標記哪裡不對 | `list_takes` → 看過畫面 → `take_review` |
+| 先拍 480p 樣片省點,確認後再出 1080p | Seedance 2.5 用 480p 拍 → `job_status` 回 `draft` → 使用者看過、說要這一支 → `estimate_cost`(take_upgrade 項,帶 assetId)→ `take_upgrade` → `job_status` 等新的 assetId。成稿照樣片出、不重抽;樣片 7 天內有效、每支只升一次 |
+| 挑好要用的那幾條,一起轉 1080p(OK CUT) | `take_ok_cut` 標上 → `ok_cut_list` 看待轉支數與合計點數 → 使用者確認 → 照清單順序逐支 `take_upgrade`(一支回應了再送下一支) |
+| 短片接成一支整部片 | `film_cut_render`(每段都要有出片版、最長 5 分鐘,不扣點) |
+| 把成片交給後製剪輯 | `take_download`:工作室作品帶 `assetIds`,短片專案帶 `projectId`(每段主版、照段序編號)。樣片升好的自動換成 1080p;拿回的網址用 `curl -L -o <fileName> <url>` 存下來 |
 | 分鏡存成短片專案 | `list_projects` / `shoot_draft_create` / `shoot_segments_append` / `segment_prompt_push` |
-| 讓總譜做導演分析(拆段、每段目標與節奏) | `score_analyze`(先 `dryRun` 報價;已有段落要使用者同意才帶 `replaceExisting`)→ `score_status` 等到 done |
+| 讓總譜做導演分析(拆段、每段目標與節奏) | `score_analyze`(先 `dryRun` 報價,拿 `runtimeByPace` 問使用者節奏 `pace`:slow / narrative / fast;已有段落要使用者同意才帶 `replaceExisting`)→ `score_status` 等到 done,看 `review.cutFindings` 剪輯體檢 |
+| 總譜某一場不滿意(太平、要更緊張、拆成兩段) | `score_rescore_scene` 帶 `sceneIndex` 與一句 `directorNote`,只重拆那一場 → `score_status` |
 | 讀站上總譜某一段的導演內容與送件全文 | `list_segments` → `segment_get` |
+| 在短片專案的某一段上直接開拍(成片進那一段的 take,審片 / 升 1080p / 接整部片都接得上) | `segment_generate` 先帶 `dryRun: true` 報價 → 使用者確認 → 不帶 `dryRun` 送出 → `job_status`。不帶 `prompt` 就送那一段目前的本文;要改稿就從 `segment_get` 的 `submission.body` 改起當 `prompt` 帶。段落標了接上一段(`chainPrev`)時,等上一段 ready 再帶 `extendFromAssetId` 續拍,或帶 `ignoreChain: true` 獨立起拍 |
+| 短劇:拆好分鏡 / 組好提示詞直接拍某一集 | `duanju_list` 找劇與集(一集 = 一個短片專案,拿 `projectId`)→ 還沒建的集用 `duanju_episode_create` 帶劇本建(不扣點)→ `shoot_segments_append` 寫段落(角色名、`location` 跟劇的名冊逐字一致)→ `segment_generate` 先 `dryRun` 報價再開拍 |
 | 九宮格廣告 | `ad_analyze` → `ad_project_save` → `ad_grid_generate` → `ad_video_generate` |
 | 電商短影音 | `ecom_analyze` → `ecom_project_save` → `ecom_video_generate` |
 | 本機檔案當參考素材 | `media_upload_url` → PUT 上傳 → `media_upload_commit` |
@@ -51,10 +65,12 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 
 ## 規矩
 
-- **先報價,再生成。** 會扣點的只有 `quick_shoot_generate`、`darkroom_generate`、`sound_generate`、`ad_grid_generate`、`ad_video_generate`、`ecom_video_generate`,以及長劇本的 `score_analyze`(用它自己的 `dryRun` 報價)。使用者沒看過價錢之前,先跑 `estimate_cost` 給他看總數與餘額,他確認了才送。
+- **先報價,再生成。** 會扣點的只有 `quick_shoot_generate`、`darkroom_generate`、`digital_double_generate`、`sound_generate`、`ad_grid_generate`、`ad_video_generate`、`ecom_video_generate`、樣片升 1080p 的 `take_upgrade`,以及長劇本的 `score_analyze` 與短片段落開拍的 `segment_generate`(這兩支用自己的 `dryRun` 報價)。使用者沒看過價錢之前,先跑 `estimate_cost` 給他看總數與餘額,他確認了才送。
 - **同一批作品放同一個工作區。** 使用者說了專案或主題名稱,每一筆 `quick_shoot_generate` / `darkroom_generate` 都帶同一個 `workspaceName`;都不帶時影片與圖片會落在不同的預設工作區。回傳 `workspaceCreated: true` 時告訴使用者新建了哪個工作區(名字打錯會多建一個)。
 - **參考素材只收使用者自己的素材網址。** 外部網址先走上傳兩步;素材庫、定妝庫的網址可以直接用。
-- **逾時不要直接重送。** 那一發多半已經生出來、也扣過點了。先用 `job_status` 或 `list_sounds` 查;`sound_generate` 重送要帶原本的 `nonce`。
+- **樣片要使用者確認過才升。** `take_upgrade` 是定版:升出來的就是那支樣片的 1080p,不會變好或變差。使用者沒看過、沒說要這一支,不要升。
+- **逾時不要直接重送。** 那一發多半已經生出來、也扣過點了。先用 `job_status` 或 `list_sounds` 查(`take_upgrade` 逾時就查樣片的 `draft.upgradedAssetId`);`sound_generate` 重送要帶原本的 `nonce`。
+- **存到使用者電腦時用 `fileName`。** `job_status` / `list_takes` / `take_download` 都會回建議檔名 `fileName`。可以照使用者的意思換掉前半段，但 `isDraft: true` 的樣片一定要保留 `_draft` 後綴，副檔名也不要改（MOV 就是 `.mov`）。例：`森林騎乘-a1b2c3d4_draft.mp4` → `第3場_追逐_draft.mp4`。
 - **審片要真的看過畫面。** 沒看過就不要寫 `take_review`;使用者自己點過的判讀是權威,不要推翻,你的判讀只是建議。
 - **`score_analyze` 會整份換掉專案段落。** 專案已有段落時,先告訴使用者會換掉幾段、已生成的影片會脫鉤,他同意了才帶 `replaceExisting: true`。
 - **劇本改寫要使用者點頭。** `scene_audit` 給的是診斷與修法,先列給他選,他同意了才動筆。
