@@ -20,9 +20,13 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 
 | 想做的事 | 工具 |
 | --- | --- |
-| 不確定用哪支、某個流程怎麼走 | `help`(可帶 topic:studio / digital_double / short_film / ad_ecom / sound / media / billing) |
+| 不確定用哪支、某個流程怎麼走 | `help`(可帶 topic:studio / digital_double / short_film / cinema_direct / ad_ecom / sound / media / billing) |
+| 一部短片從寫劇本一路拍到審片 | `cinema_plan` 先列每一步的現況、模式與點數給使用者看、讓他改選,再照順序一步一步跑(選單裡的 `cinema_direct` 是同一套流程) |
 | 看餘額 | `get_balance` |
 | 算一批要花多少點 | `estimate_cost` |
+| 還沒有專案、要從劇本開始 | `short_film_create`(空的 2.5 短片專案,不扣點)→ `script_write` 帶一句話的點子寫劇本(一般寫稿免費;Agent 寫稿付費,回 runId 用 `agent_run_status` 等) |
+| 角色、場景、道具的美術聖經與錨點句 | 拆好總譜後 `art_bible`(只有 Agent 模式、付費)→ `agent_run_status` 等 |
+| 要站上的 Agent 從描述寫送件稿 | `prompt_write`(付費,先 `dryRun` 報價) |
 | 把一段描述變成送件提示詞 | `prompt_compile`;一場戲好幾個鏡頭用 `prompt_compile_batch` 一次編完。回 `sendable` 為 false 就照 `warnings` 修正後重編,不要直接送 |
 | 使用者想用說的改提示詞(「雨再大一點」) | `prompt_revise`:帶目前的稿與一句 `instruction`,回傳的 `threadId` 帶回來就接著改;免費次數用完(`dryRun` 看 `nextTurnCredits`)先報價再送 |
 | 拍一支影片 | `quick_shoot_generate` → `job_status` 等到 ready。`modelChoice: "kling-40"`(可靈 4.0)最長 30 秒、到 1080p,只收參考圖(≤10 張)、比例 16:9 / 9:16 / 1:1 / 21:9,提示詞先用 `prompt_compile` 帶同一個 modelChoice 編 |
@@ -48,7 +52,16 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 | 電商短影音 | `ecom_analyze` → `ecom_project_save` → `ecom_video_generate` |
 | 本機檔案當參考素材 | `media_upload_url` → PUT 上傳 → `media_upload_commit` |
 
-選單裡也有三個現成流程:**導演審片**(`director_review`)、**劇本健檢**(`script_doctor`)、**拍一場戲**(`shoot_scene`)。
+選單裡也有幾個現成流程:**開始使用**(`getting_started`)、**整套拍攝流程**(`cinema_direct`)、**導演審片**(`director_review`)、**劇本健檢**(`script_doctor`)、**拍一場戲**(`shoot_scene`)。
+
+## 一般模式或站內 Agent
+
+有幾步可以改由站上的 Agent 帶著導演、劇作、美術、提示詞寫法的方法來做(付費、品質較高,你這邊不用裝任何東西):`script_write` 與 `score_analyze` 的 agentMode、`art_bible`、`prompt_write`、`prompt_revise` 的 agentMode。
+
+1. 這個對話第一次遇到這種步驟時,先問使用者一次要哪一種,記到對話結束:每次都問我 / 一律不用 / 照建議。
+2. 每支都先帶 `dryRun: true`,拿回的 `agentOffer` 列了一般與各 Agent 檔的點數、能不能用(不能用會寫原因)、建議哪一檔。把它列給使用者選;**不要替使用者選付費檔**。
+3. 使用者確認點數才帶 `agentMode` 送出。寫劇本、美術、拆鏡會立刻回 runId,用 `agent_run_status`(拆鏡用 `score_status`)等結果;失敗不扣點,照實告訴使用者。
+4. 支援的客戶端會在對話框裡畫出選模式 / 進度卡;卡片上的按鈕只會把一句話交回給你,照樣先報價再送。
 
 ## 同場連戲續拍
 
@@ -65,13 +78,14 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 
 ## 規矩
 
-- **先報價,再生成。** 會扣點的只有 `quick_shoot_generate`、`darkroom_generate`、`digital_double_generate`、`sound_generate`、`ad_grid_generate`、`ad_video_generate`、`ecom_video_generate`、樣片升 1080p 的 `take_upgrade`,以及長劇本的 `score_analyze` 與短片段落開拍的 `segment_generate`(這兩支用自己的 `dryRun` 報價)。使用者沒看過價錢之前,先跑 `estimate_cost` 給他看總數與餘額,他確認了才送。
+- **先報價,再生成。** 會扣點的只有 `quick_shoot_generate`、`darkroom_generate`、`digital_double_generate`、`sound_generate`、`ad_grid_generate`、`ad_video_generate`、`ecom_video_generate`、樣片升 1080p 的 `take_upgrade`,以及長劇本或帶 agentMode 的 `score_analyze`、短片段落開拍的 `segment_generate`、Agent 模式的 `script_write`、`art_bible`、`prompt_write`、帶 agentMode 的 `prompt_revise`(這幾支用自己的 `dryRun` 報價)。使用者沒看過價錢之前,先跑 `estimate_cost` 給他看總數與餘額,他確認了才送。
 - **同一批作品放同一個工作區。** 使用者說了專案或主題名稱,每一筆 `quick_shoot_generate` / `darkroom_generate` 都帶同一個 `workspaceName`;都不帶時影片與圖片會落在不同的預設工作區。回傳 `workspaceCreated: true` 時告訴使用者新建了哪個工作區(名字打錯會多建一個)。
 - **參考素材只收使用者自己的素材網址。** 外部網址先走上傳兩步;素材庫、定妝庫的網址可以直接用。
 - **樣片要使用者確認過才升。** `take_upgrade` 是定版:升出來的就是那支樣片的 1080p,不會變好或變差。使用者沒看過、沒說要這一支,不要升。
 - **逾時不要直接重送。** 那一發多半已經生出來、也扣過點了。先用 `job_status` 或 `list_sounds` 查(`take_upgrade` 逾時就查樣片的 `draft.upgradedAssetId`);`sound_generate` 重送要帶原本的 `nonce`。
 - **存到使用者電腦時用 `fileName`。** `job_status` / `list_takes` / `take_download` 都會回建議檔名 `fileName`。可以照使用者的意思換掉前半段，但 `isDraft: true` 的樣片一定要保留 `_draft` 後綴，副檔名也不要改（MOV 就是 `.mov`）。例：`森林騎乘-a1b2c3d4_draft.mp4` → `第3場_追逐_draft.mp4`。
 - **審片要真的看過畫面。** 沒看過就不要寫 `take_review`;使用者自己點過的判讀是權威,不要推翻,你的判讀只是建議。
+- **`script_write` 會整份換掉專案劇本。** 專案已有劇本時,先告訴使用者,他同意了才帶 `replaceExisting: true`。
 - **`score_analyze` 會整份換掉專案段落。** 專案已有段落時,先告訴使用者會換掉幾段、已生成的影片會脫鉤,他同意了才帶 `replaceExisting: true`。
 - **劇本改寫要使用者點頭。** `scene_audit` 給的是診斷與修法,先列給他選,他同意了才動筆。
 - 回傳帶 `lowBalance` 時提醒使用者餘額快不夠了。
