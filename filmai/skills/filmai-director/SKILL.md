@@ -1,6 +1,6 @@
 ---
 name: filmai-director
-description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影大師上拍 AI 影片、出圖、配音、做會開口說話的數字替身、審片、健檢劇本、編提示詞、報價,或提到「電影大師」「filmai」「開拍」「快拍」「暗房」「定妝」「審片」「重拍」「數字替身」「口播」時使用。Use when the user wants to shoot AI video, generate images or sound, make a talking digital double from a portrait and an audio clip, review takes, audit a script, compile a video prompt, or get a price quote on filmai.ai.
+description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影大師上拍 AI 影片、出圖、配音、做會開口說話的數字替身、審片、健檢劇本、編提示詞、報價,或提到「電影大師」「filmai」「開拍」「快拍」「暗房」「定妝」「審片」「重拍」「數字替身」「口播」「後製」「改片」「影片編輯」「移除物體」「加特效」時使用。Use when the user wants to shoot AI video, generate images or sound, make a talking digital double from a portrait and an audio clip, edit an existing video (remove objects, replace things, add effects, restyle), review takes, audit a script, compile a video prompt, or get a price quote on filmai.ai.
 ---
 
 # 電影大師導演指南
@@ -20,7 +20,7 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 
 | 想做的事 | 工具 |
 | --- | --- |
-| 不確定用哪支、某個流程怎麼走 | `help`(可帶 topic:studio / digital_double / short_film / cinema_direct / ad_ecom / sound / media / billing) |
+| 不確定用哪支、某個流程怎麼走 | `help`(可帶 topic:studio / digital_double / short_film / cinema_direct / post_edit / ad_ecom / sound / media / billing) |
 | 一部短片從寫劇本一路拍到審片 | `cinema_plan` 先列每一步的現況、模式與點數給使用者看、讓他改選,再照順序一步一步跑(選單裡的 `cinema_direct` 是同一套流程) |
 | 看餘額 | `get_balance` |
 | 算一批要花多少點 | `estimate_cost` |
@@ -30,6 +30,7 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 | 把一段描述變成送件提示詞 | `prompt_compile`;一場戲好幾個鏡頭用 `prompt_compile_batch` 一次編完。回 `sendable` 為 false 就照 `warnings` 修正後重編,不要直接送 |
 | 使用者想用說的改提示詞(「雨再大一點」) | `prompt_revise`:帶目前的稿與一句 `instruction`,回傳的 `threadId` 帶回來就接著改;免費次數用完(`dryRun` 看 `nextTurnCredits`)先報價再送 |
 | 拍一支影片 | `quick_shoot_generate` → `job_status` 等到 ready。`modelChoice: "kling-40"`(可靈 4.0)最長 30 秒、到 1080p,只收參考圖(≤10 張)、比例 16:9 / 9:16 / 1:1 / 21:9,提示詞先用 `prompt_compile` 帶同一個 modelChoice 編 |
+| 後製:改一支既有的影片(移除物體、換東西、加特效、換風格、改台詞) | 先 `help` 帶 topic `post_edit` 讀選哪一家(Seedance 2.5 / 可靈 4.0 / 萬相 3.0)與編輯稿寫法,照它做:原片上傳(或用站上作品的網址)→ 抽幀盤點原片 → `estimate_cost`(video 項帶 `mode: "edit"` 與原片秒數)→ `quick_shoot_generate` 帶 `mode: "edit"` → `job_status` → 前後同一秒抽幀比對。原片超過 30 秒(萬相 15 秒)先在本機用 ffmpeg 切成短段再上傳(`ffmpeg -ss <起> -t <長> -i in.mp4 -c copy part1.mp4`,切點不準就拿掉 `-c copy` 重編碼),一段一段改。一次只改一件事;選單裡的 `post_edit` 是同一套流程 |
 | 一場戲拆成好幾段、要接得上 | 見下方「同場連戲續拍」:`quick_shoot_generate` 帶 `firstFrameFromAssetId`;要先看尾幀用 `take_last_frame` |
 | 出一張圖 | `darkroom_generate` → `job_status` |
 | 讓照片裡的人開口說話 / 唱歌(口播、講解、獨白) | 人像與音訊先上傳(或用 `sound_generate` 生成旁白)→ `estimate_cost`(digital_double 項,帶音訊秒數)→ `digital_double_generate` → `job_status`。影片長度 = 音訊長度、畫面比例跟著人像;只用使用者有權使用的人像 |
@@ -52,7 +53,7 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 | 電商短影音 | `ecom_analyze` → `ecom_project_save` → `ecom_video_generate` |
 | 本機檔案當參考素材 | `media_upload_url` → PUT 上傳 → `media_upload_commit` |
 
-選單裡也有幾個現成流程:**開始使用**(`getting_started`)、**整套拍攝流程**(`cinema_direct`)、**導演審片**(`director_review`)、**劇本健檢**(`script_doctor`)、**拍一場戲**(`shoot_scene`)。
+選單裡也有幾個現成流程:**開始使用**(`getting_started`)、**整套拍攝流程**(`cinema_direct`)、**導演審片**(`director_review`)、**劇本健檢**(`script_doctor`)、**拍一場戲**(`shoot_scene`)、**後製改片**(`post_edit`)。
 
 ## 一般模式或站內 Agent
 
