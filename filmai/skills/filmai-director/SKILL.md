@@ -26,7 +26,7 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 | 算一批要花多少點 | `estimate_cost` |
 | 還沒有專案、要從劇本開始 | `short_film_create`(空的 2.5 短片專案,不扣點)→ `script_write` 帶一句話的點子寫劇本(一般寫稿免費;Agent 寫稿付費,回 runId 用 `agent_run_status` 等) |
 | 角色、場景、道具的美術聖經與錨點句 | 拆好總譜、建好美術卡後 `art_bible`(只有 Agent 模式、付費)→ `agent_run_status` 等 |
-| 短片專案的角色 / 場景 / 道具卡:建卡、看缺圖、出圖 | `art_cards_extract` 從劇本建卡(不扣點;已經有圖的卡會保留)→ `list_art_cards` 看哪幾張缺圖、有沒有段落在用 → `art_card_generate` 先帶 `dryRun: true` 報價 → 使用者確認 → 不帶 `dryRun` 送出 → `job_status`。只做第一次出圖,已經有圖或正在生成的會擋下;逾時不要重送,先 `list_art_cards` 看狀態。這是專案的美術卡(開拍時自動帶進參考圖),跟 `darkroom_generate` 出的工作室圖是兩回事 |
+| 短片專案的角色 / 場景 / 道具卡:建卡、看缺圖、出圖 | `art_cards_extract` 從劇本建卡(不扣點;已經有圖的卡會保留,還沒有圖的會整批換新 —— 見下方規矩)→ `list_art_cards` 看哪幾張缺圖、有沒有段落在用 → `art_card_generate` 先帶 `dryRun: true` 報價 → 使用者確認 → 不帶 `dryRun` 送出 → `job_status`。只做第一次出圖,已經有圖或正在生成的會擋下;逾時不要重送,先 `list_art_cards` 看狀態。這是專案的美術卡(開拍時自動帶進參考圖),跟 `darkroom_generate` 出的工作室圖是兩回事 |
 | 要站上的 Agent 從描述寫送件稿 | `prompt_write`(付費,先 `dryRun` 報價) |
 | 把一段描述變成送件提示詞 | `prompt_compile`;一場戲好幾個鏡頭用 `prompt_compile_batch` 一次編完。回 `sendable` 為 false 就照 `warnings` 修正後重編,不要直接送 |
 | 使用者想用說的改提示詞(「雨再大一點」) | `prompt_revise`:帶目前的稿與一句 `instruction`,回傳的 `threadId` 帶回來就接著改;免費次數用完(`dryRun` 看 `nextTurnCredits`)先報價再送 |
@@ -92,6 +92,7 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 - **審片要真的看過畫面。** 沒看過就不要寫 `take_review`;使用者自己點過的判讀是權威,不要推翻,你的判讀只是建議。
 - **`script_write` 會整份換掉專案劇本。** 專案已有劇本時,先告訴使用者,他同意了才帶 `replaceExisting: true`。
 - **`score_analyze` 會整份換掉專案段落。** 專案已有段落時,先告訴使用者會換掉幾段、已生成的影片會脫鉤,他同意了才帶 `replaceExisting: true`。
+- **`art_cards_extract` 會換掉還沒有圖的卡。** 已經有圖的保留;還沒有圖的整批換成這次分析的結果,`art_bible` 寫回那些卡的提示詞與錨點句也跟著不見(要再跑一次付費的 `art_bible` 才補得回來)。專案已經有卡時,先用 `list_art_cards` 看哪幾張還沒有圖、告訴使用者會被換掉,他同意了才重跑。
 - **劇本改寫要使用者點頭。** `scene_audit` 給的是診斷與修法,先列給他選,他同意了才動筆。
 - 回傳帶 `lowBalance` 時提醒使用者餘額快不夠了。
 - `feature_*` 長片工具目前只開放內部測試,一般使用者不要呼叫。
