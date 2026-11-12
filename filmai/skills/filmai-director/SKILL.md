@@ -21,11 +21,12 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 | 想做的事 | 工具 |
 | --- | --- |
 | 不確定用哪支、某個流程怎麼走 | `help`(可帶 topic:studio / digital_double / short_film / cinema_direct / post_edit / ad_ecom / sound / media / billing) |
-| 一部短片從寫劇本一路拍到審片 | `cinema_plan` 先列每一步的現況、模式與點數給使用者看、讓他改選,再照順序一步一步跑(選單裡的 `cinema_direct` 是同一套流程) |
+| 一部短片從寫劇本一路拍到成片 | `cinema_plan` 先列每一步(寫劇本、拆鏡、建美術卡與出圖、開拍、審片、定出片版與合成)的現況、模式與點數給使用者看、讓他改選,再照順序一步一步跑(選單裡的 `cinema_direct` 是同一套流程) |
 | 看餘額 | `get_balance` |
 | 算一批要花多少點 | `estimate_cost` |
 | 還沒有專案、要從劇本開始 | `short_film_create`(空的 2.5 短片專案,不扣點)→ `script_write` 帶一句話的點子寫劇本(一般寫稿免費;Agent 寫稿付費,回 runId 用 `agent_run_status` 等) |
-| 角色、場景、道具的美術聖經與錨點句 | 拆好總譜後 `art_bible`(只有 Agent 模式、付費)→ `agent_run_status` 等 |
+| 角色、場景、道具的美術聖經與錨點句 | 拆好總譜、建好美術卡後 `art_bible`(只有 Agent 模式、付費)→ `agent_run_status` 等 |
+| 短片專案的角色 / 場景 / 道具卡:建卡、看缺圖、出圖 | `art_cards_extract` 從劇本建卡(不扣點;已經有圖的卡會保留)→ `list_art_cards` 看哪幾張缺圖、有沒有段落在用 → `art_card_generate` 先帶 `dryRun: true` 報價 → 使用者確認 → 不帶 `dryRun` 送出 → `job_status`。只做第一次出圖,已經有圖或正在生成的會擋下;逾時不要重送,先 `list_art_cards` 看狀態。這是專案的美術卡(開拍時自動帶進參考圖),跟 `darkroom_generate` 出的工作室圖是兩回事 |
 | 要站上的 Agent 從描述寫送件稿 | `prompt_write`(付費,先 `dryRun` 報價) |
 | 把一段描述變成送件提示詞 | `prompt_compile`;一場戲好幾個鏡頭用 `prompt_compile_batch` 一次編完。回 `sendable` 為 false 就照 `warnings` 修正後重編,不要直接送 |
 | 使用者想用說的改提示詞(「雨再大一點」) | `prompt_revise`:帶目前的稿與一句 `instruction`,回傳的 `threadId` 帶回來就接著改;免費次數用完(`dryRun` 看 `nextTurnCredits`)先報價再送 |
@@ -40,14 +41,17 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 | 健檢劇本或一場戲 | `scene_audit` |
 | 審片、標記哪裡不對 | `list_takes` → 看過畫面 → `take_review` |
 | 先拍 480p 樣片省點,確認後再出 1080p | Seedance 2.5 用 480p 拍 → `job_status` 回 `draft` → 使用者看過、說要這一支 → `estimate_cost`(take_upgrade 項,帶 assetId)→ `take_upgrade` → `job_status` 等新的 assetId。成稿照樣片出、不重抽;樣片 7 天內有效、每支只升一次 |
-| 挑好要用的那幾條,一起轉 1080p(OK CUT) | `take_ok_cut` 標上 → `ok_cut_list` 看待轉支數與合計點數 → 使用者確認 → 照清單順序逐支 `take_upgrade`(一支回應了再送下一支) |
-| 短片接成一支整部片 | `film_cut_render`(每段都要有出片版、最長 5 分鐘,不扣點) |
+| 使用者說「這支 OK」「這支要」(標 OK 卡) | `take_ok_cut` 標上(任何生成好的影片都行;站上卡片左上角的 OK 也是同一個標記) |
+| 剪輯時「把 OK 卡剪進去」 | `ok_cut_timeline`:帶 `workspaceId`(再加 `folderId` 只剪那一場),順序預設照資料夾與拍攝先後,或用 `assetIds` 照導演計畫的剪接順序 → 照 `steps` 下載到資料夾、存 `.otio` → 匯入 DaVinci Resolve(手上有 Resolve 的 MCP 就用 `MediaPool.ImportTimelineFromFile`) |
+| OK 卡裡的 2.5 樣片最後一起轉 1080p | `ok_cut_list`(或 `ok_cut_timeline` 回的 `upgrade`)看待轉支數與合計點數 → 使用者確認 → 照清單順序逐支 `take_upgrade`(一支回應了再送下一支)→ 都 ready 後再叫一次 `ok_cut_timeline`,時間軸自動換成 1080p |
+| 短片某一段要用哪一條當出片版 | `take_set_final`(只收生成好的 take;整部片合成與下載各段都用出片版,沒定過就是最新拍好的那一條)。`take_ok_cut` 是剪接用的 OK 標記、`take_review` 是審片判讀,都不會改出片版 |
+| 短片接成一支整部片 | `film_cut_render`(每段都要有拍好的片,用的是各段的出片版;最長 5 分鐘,不扣點) |
 | 把成片交給後製剪輯 | `take_download`:工作室作品帶 `assetIds`,短片專案帶 `projectId`(每段主版、照段序編號)。樣片升好的自動換成 1080p;拿回的網址用 `curl -L -o <fileName> <url>` 存下來 |
 | 分鏡存成短片專案 | `list_projects` / `shoot_draft_create` / `shoot_segments_append` / `segment_prompt_push` |
 | 讓總譜做導演分析(拆段、每段目標與節奏) | `score_analyze`(先 `dryRun` 報價,拿 `runtimeByPace` 問使用者節奏 `pace`:slow / narrative / fast;已有段落要使用者同意才帶 `replaceExisting`)→ `score_status` 等到 done,看 `review.cutFindings` 剪輯體檢 |
 | 總譜某一場不滿意(太平、要更緊張、拆成兩段) | `score_rescore_scene` 帶 `sceneIndex` 與一句 `directorNote`,只重拆那一場 → `score_status` |
 | 讀站上總譜某一段的導演內容與送件全文 | `list_segments` → `segment_get` |
-| 在短片專案的某一段上直接開拍(成片進那一段的 take,審片 / 升 1080p / 接整部片都接得上) | `segment_generate` 先帶 `dryRun: true` 報價 → 使用者確認 → 不帶 `dryRun` 送出 → `job_status`。不帶 `prompt` 就送那一段目前的本文;要改稿就從 `segment_get` 的 `submission.body` 改起當 `prompt` 帶。段落標了接上一段(`chainPrev`)時,等上一段 ready 再帶 `extendFromAssetId` 續拍,或帶 `ignoreChain: true` 獨立起拍 |
+| 在短片專案的某一段上直接開拍(成片進那一段的 take,審片 / 升 1080p / 接整部片都接得上) | `segment_generate` 先帶 `dryRun: true` 報價 → 使用者確認 → 不帶 `dryRun` 送出 → `job_status`。報價回的 `missingReferences` 是這一段綁了卻還沒有圖的卡,先用 `art_card_generate` 補圖再拍(不補也能送,只是少帶那幾張參考圖)。不帶 `prompt` 就送那一段目前的本文;要改稿就從 `segment_get` 的 `submission.body` 改起當 `prompt` 帶。段落標了接上一段(`chainPrev`)時,等上一段 ready 再帶 `extendFromAssetId` 續拍,或帶 `ignoreChain: true` 獨立起拍 |
 | 短劇:拆好分鏡 / 組好提示詞直接拍某一集 | `duanju_list` 找劇與集(一集 = 一個短片專案,拿 `projectId`)→ 還沒建的集用 `duanju_episode_create` 帶劇本建(不扣點)→ `shoot_segments_append` 寫段落(角色名、`location` 跟劇的名冊逐字一致)→ `segment_generate` 先 `dryRun` 報價再開拍 |
 | 九宮格廣告 | `ad_analyze` → `ad_project_save` → `ad_grid_generate` → `ad_video_generate` |
 | 電商短影音 | `ecom_analyze` → `ecom_project_save` → `ecom_video_generate` |
@@ -79,7 +83,7 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 
 ## 規矩
 
-- **先報價,再生成。** 會扣點的只有 `quick_shoot_generate`、`darkroom_generate`、`digital_double_generate`、`sound_generate`、`ad_grid_generate`、`ad_video_generate`、`ecom_video_generate`、樣片升 1080p 的 `take_upgrade`,以及長劇本或帶 agentMode 的 `score_analyze`、短片段落開拍的 `segment_generate`、Agent 模式的 `script_write`、`art_bible`、`prompt_write`、帶 agentMode 的 `prompt_revise`(這幾支用自己的 `dryRun` 報價)。使用者沒看過價錢之前,先跑 `estimate_cost` 給他看總數與餘額,他確認了才送。
+- **先報價,再生成。** 會扣點的只有 `quick_shoot_generate`、`darkroom_generate`、`digital_double_generate`、`sound_generate`、`ad_grid_generate`、`ad_video_generate`、`ecom_video_generate`、樣片升 1080p 的 `take_upgrade`,以及長劇本或帶 agentMode 的 `score_analyze`、短片段落開拍的 `segment_generate`、短片美術卡出圖的 `art_card_generate`、Agent 模式的 `script_write`、`art_bible`、`prompt_write`、帶 agentMode 的 `prompt_revise`(這幾支用自己的 `dryRun` 報價)。使用者沒看過價錢之前,先跑 `estimate_cost` 給他看總數與餘額,他確認了才送。
 - **同一批作品放同一個工作區。** 使用者說了專案或主題名稱,每一筆 `quick_shoot_generate` / `darkroom_generate` 都帶同一個 `workspaceName`;都不帶時影片與圖片會落在不同的預設工作區。回傳 `workspaceCreated: true` 時告訴使用者新建了哪個工作區(名字打錯會多建一個)。
 - **參考素材只收使用者自己的素材網址。** 外部網址先走上傳兩步;素材庫、定妝庫的網址可以直接用。
 - **樣片要使用者確認過才升。** `take_upgrade` 是定版:升出來的就是那支樣片的 1080p,不會變好或變差。使用者沒看過、沒說要這一支,不要升。
