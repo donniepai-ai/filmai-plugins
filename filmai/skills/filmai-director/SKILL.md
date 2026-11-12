@@ -26,11 +26,11 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 | 算一批要花多少點 | `estimate_cost` |
 | 還沒有專案、要從劇本開始 | `short_film_create`(空的 2.5 短片專案,不扣點)→ `script_write` 帶一句話的點子寫劇本(一般寫稿免費;Agent 寫稿付費,回 runId 用 `agent_run_status` 等) |
 | 角色、場景、道具的美術聖經與錨點句 | 拆好總譜、建好美術卡後 `art_bible`(只有 Agent 模式、付費)→ `agent_run_status` 等 |
-| 短片專案的角色 / 場景 / 道具卡:建卡、看缺圖、出圖 | `art_cards_extract` 從劇本建卡(不扣點;已經有圖的卡會保留,還沒有圖的會整批換新 —— 見下方規矩)→ `list_art_cards` 看哪幾張缺圖、有沒有段落在用 → `art_card_generate` 先帶 `dryRun: true` 報價 → 使用者確認 → 不帶 `dryRun` 送出 → `job_status`。只做第一次出圖,已經有圖或正在生成的會擋下;逾時不要重送,先 `list_art_cards` 看狀態。這是專案的美術卡(開拍時自動帶進參考圖),跟 `darkroom_generate` 出的工作室圖是兩回事 |
+| 短片專案的角色 / 場景 / 道具卡:建卡、看缺圖、出圖 | `art_cards_extract` 從劇本建卡(不扣點;只支援短片專案,短劇集回 `unsupported_project`、請使用者到站上的美術站處理;重跑時已經有圖的卡會保留,沒有圖的舊卡有一部分會換新 —— 見下方規矩)→ `list_art_cards` 看哪幾張缺圖、有沒有段落在用 → `art_card_generate` 先帶 `dryRun: true` 報價 → 使用者確認 → 不帶 `dryRun` 送出 → `job_status`。只做第一次出圖,已經有圖或正在生成的會擋下;逾時不要重送,先 `list_art_cards` 看狀態。這是專案的美術卡(開拍時自動帶進參考圖),跟 `darkroom_generate` 出的工作室圖是兩回事 |
 | 要站上的 Agent 從描述寫送件稿 | `prompt_write`(付費,先 `dryRun` 報價) |
-| 把一段描述變成送件提示詞 | `prompt_compile`;一場戲好幾個鏡頭用 `prompt_compile_batch` 一次編完。回 `sendable` 為 false 就照 `warnings` 修正後重編,不要直接送 |
+| 把一段描述變成送件提示詞 | `prompt_compile`;一場戲好幾個鏡頭用 `prompt_compile_batch` 一次編完。回 `sendable` 為 false 就照 `warnings` 修正後重編,不要直接送。描述一律先編再送;自己已經寫好完整送件稿、只想送前看一眼,帶 `checkOnly: true`(只檢查、不改寫) |
 | 使用者想用說的改提示詞(「雨再大一點」) | `prompt_revise`:帶目前的稿與一句 `instruction`,回傳的 `threadId` 帶回來就接著改;免費次數用完(`dryRun` 看 `nextTurnCredits`)先報價再送 |
-| 拍一支影片 | `quick_shoot_generate` → `job_status` 等到 ready。`modelChoice: "kling-40"`(可靈 4.0)最長 30 秒、到 1080p,只收參考圖(≤10 張)、比例 16:9 / 9:16 / 1:1 / 21:9,提示詞先用 `prompt_compile` 帶同一個 modelChoice 編 |
+| 拍一支影片 | `quick_shoot_generate` → `job_status` 等到 ready。`modelChoice: "kling-40"`(可靈 4.0)最長 30 秒、到 1080p,只收參考圖(≤10 張)、比例 16:9 / 9:16 / 1:1 / 21:9,提示詞先用 `prompt_compile` 帶同一個 modelChoice 編。`prompt` 傳編好的那一份(不要再改字);回傳的 `intake.compile` 是 `uncompiled` 就表示沒經過站上的編譯,`intake.checks` 與 `warnings` 照實轉告使用者。自己寫好完整送件稿、而且使用者明講要原樣送出,才帶 `raw: true` |
 | 後製:改一支既有的影片(移除物體、換東西、加特效、換風格、改台詞) | 先 `help` 帶 topic `post_edit` 讀選哪一家(Seedance 2.5 / 可靈 4.0 / 萬相 3.0)與編輯稿寫法,照它做:原片上傳(或用站上作品的網址)→ 抽幀盤點原片 → `estimate_cost`(video 項帶 `mode: "edit"` 與原片秒數)→ `quick_shoot_generate` 帶 `mode: "edit"` → `job_status` → 前後同一秒抽幀比對。原片超過 30 秒(萬相 15 秒)先在本機用 ffmpeg 切成短段再上傳(`ffmpeg -ss <起> -t <長> -i in.mp4 -c copy part1.mp4`,切點不準就拿掉 `-c copy` 重編碼),一段一段改。一次只改一件事;選單裡的 `post_edit` 是同一套流程 |
 | 一場戲拆成好幾段、要接得上 | 見下方「同場連戲續拍」:`quick_shoot_generate` 帶 `firstFrameFromAssetId`;要先看尾幀用 `take_last_frame` |
 | 出一張圖 | `darkroom_generate` → `job_status` |
@@ -92,7 +92,7 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 - **審片要真的看過畫面。** 沒看過就不要寫 `take_review`;使用者自己點過的判讀是權威,不要推翻,你的判讀只是建議。
 - **`script_write` 會整份換掉專案劇本。** 專案已有劇本時,先告訴使用者,他同意了才帶 `replaceExisting: true`。
 - **`score_analyze` 會整份換掉專案段落。** 專案已有段落時,先告訴使用者會換掉幾段、已生成的影片會脫鉤,他同意了才帶 `replaceExisting: true`。
-- **`art_cards_extract` 會換掉還沒有圖的卡。** 已經有圖的保留;還沒有圖的整批換成這次分析的結果,`art_bible` 寫回那些卡的提示詞與錨點句也跟著不見(要再跑一次付費的 `art_bible` 才補得回來)。專案已經有卡時,先用 `list_art_cards` 看哪幾張還沒有圖、告訴使用者會被換掉,他同意了才重跑。
+- **`art_cards_extract` 重跑會換掉一部分還沒有圖的卡。** 已經有圖的保留;還沒有圖、但 `art_bible` 寫回過或使用者改過錨點句的卡,這次又抽到同一個角色 / 場景 / 道具就原卡保留(提示詞、鎖定詞、錨點句不動);其餘沒有圖的舊卡換成這次分析的結果,劇本裡已經沒有的歸檔。這次新建的卡不會照美術聖經寫(要再跑一次付費的 `art_bible` 才會補上)。專案已經有卡時,先用 `list_art_cards` 看哪幾張還沒有圖、告訴使用者哪些可能被換掉,他同意了才重跑。
 - **劇本改寫要使用者點頭。** `scene_audit` 給的是診斷與修法,先列給他選,他同意了才動筆。
 - 回傳帶 `lowBalance` 時提醒使用者餘額快不夠了。
 - `feature_*` 長片工具目前只開放內部測試,一般使用者不要呼叫。
