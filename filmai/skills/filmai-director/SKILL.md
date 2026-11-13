@@ -37,7 +37,8 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 | 讓照片裡的人開口說話 / 唱歌(口播、講解、獨白) | 人像與音訊先上傳(或用 `sound_generate` 生成旁白)→ `estimate_cost`(digital_double 項,帶音訊秒數)→ `digital_double_generate` → `job_status`。影片長度 = 音訊長度、畫面比例跟著人像;只用使用者有權使用的人像 |
 | 作品放進指定的工作室工作區 | 生成時帶 `workspaceName`(同名沿用、沒有就新建);或 `studio_workspaces_list` / `studio_workspace_create` 拿 id 再帶 `workspaceId` |
 | 同一部戲分場整理(第 1 場、第 2 場…) | 同一個工作區、每場一個資料夾:生成 / 上傳時帶 `workspaceName` + `folderName`(例:「哭替」+「第1場」),**不要一場開一個工作區**。已經生好的用 `studio_assets_move_to_folder` 移進夾子;`studio_folders_list` 看有哪些夾。已經被拆成好幾個工作區的,用 `studio_assets_move_to_workspace` 搬回同一個工作區(可同時帶 `folderName`) |
-| 對白 / 音效 / 旁白 | `list_voices` → `sound_generate`(同步回來,不必輪 `job_status`) |
+| 對白 / 旁白 | `list_voices` → `sound_generate`(同步回來,不必輪 `job_status`) |
+| 歌曲 / 配樂 | `estimate_cost`(music 項)→ `music_generate`(Suno,一次 2 首;非同步,用 `job_status` 逐首查)。歌詞與曲風自己寫好用 mode `custom`,只給描述用 `describe`;別寫歌手或歌名 |
 | 健檢劇本或一場戲 | `scene_audit` |
 | 審片、標記哪裡不對 | `list_takes` → 看過畫面 → `take_review` |
 | 先拍 480p 樣片省點,確認後再出 1080p | Seedance 2.5 用 480p 拍 → `job_status` 回 `draft` → 使用者看過、說要這一支 → `estimate_cost`(take_upgrade 項,帶 assetId)→ `take_upgrade` → `job_status` 等新的 assetId。成稿照樣片出、不重抽;樣片 7 天內有效、每支只升一次 |
@@ -83,7 +84,7 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 
 ## 規矩
 
-- **先報價,再生成。** 會扣點的只有 `quick_shoot_generate`、`darkroom_generate`、`digital_double_generate`、`sound_generate`、`ad_grid_generate`、`ad_video_generate`、`ecom_video_generate`、樣片升 1080p 的 `take_upgrade`,以及長劇本或帶 agentMode 的 `score_analyze`、短片段落開拍的 `segment_generate`、短片美術卡出圖的 `art_card_generate`、Agent 模式的 `script_write`、`art_bible`、`prompt_write`、帶 agentMode 的 `prompt_revise`(這幾支用自己的 `dryRun` 報價)。使用者沒看過價錢之前,先跑 `estimate_cost` 給他看總數與餘額,他確認了才送。
+- **先報價,再生成。** 會扣點的只有 `quick_shoot_generate`、`darkroom_generate`、`digital_double_generate`、`sound_generate`、`music_generate`、`ad_grid_generate`、`ad_video_generate`、`ecom_video_generate`、樣片升 1080p 的 `take_upgrade`,以及長劇本或帶 agentMode 的 `score_analyze`、短片段落開拍的 `segment_generate`、短片美術卡出圖的 `art_card_generate`、Agent 模式的 `script_write`、`art_bible`、`prompt_write`、帶 agentMode 的 `prompt_revise`(這幾支用自己的 `dryRun` 報價)。使用者沒看過價錢之前,先跑 `estimate_cost` 給他看總數與餘額,他確認了才送。
 - **同一批作品放同一個工作區。** 使用者說了專案或主題名稱,每一筆 `quick_shoot_generate` / `darkroom_generate` 都帶同一個 `workspaceName`;都不帶時影片與圖片會落在不同的預設工作區。回傳 `workspaceCreated: true` 時告訴使用者新建了哪個工作區(名字打錯會多建一個)。
 - **參考素材只收使用者自己的素材網址。** 外部網址先走上傳兩步;素材庫、定妝庫的網址可以直接用。
 - **樣片要使用者確認過才升。** `take_upgrade` 是定版:升出來的就是那支樣片的 1080p,不會變好或變差。使用者沒看過、沒說要這一支,不要升。
