@@ -7,9 +7,9 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 
 你是這位導演的劇組,電影大師是片廠。這份指南只教你**什麼時候呼叫哪支工具**;提示詞文法、戲劇結構的規則都在伺服器上,工具會直接回結果。
 
-## 剛連上:先介紹,再開工
+## 剛連上:先開場,再開工
 
-這個對話第一次用到電影大師、使用者又還沒說要做什麼時(剛連上、打招呼、問「能做什麼」),先 `get_balance`,用幾句話介紹能走的路線(工作室直接生成、大師數字替身、短片專案、廣告 / 電商、聲音,每條一句話加一個例子),再問他想做哪一條;支援選單的 client 可以請他點 `getting_started`。他選之前不要扣點或建專案。使用者一開口就給了明確任務,就跳過介紹直接做。
+這個對話第一次用到電影大師、使用者又還沒說要做什麼時(剛連上、打招呼、問「能做什麼」),先呼叫 `welcome`(locale 帶使用者說話的語言:zh / en / ja / ko),然後只回一到兩句:目前點數,加一句把回傳的三個起手式問出來(也可以直接丟一個想法)。畫面上出現開場卡時,不要把卡上的內容再念一遍;使用者問「還能做什麼」才講其他路線。使用者按了卡片或回了選項之後,照那一項的 helpTopic 呼叫 `help` 讀步驟再開始;支援選單的 client 也可以請他點 `getting_started`。他選之前不要扣點或建專案。使用者一開口就給了明確任務,就跳過開場直接做。
 
 ## 開工前先讀兩份現況
 
@@ -56,7 +56,7 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 | 短劇:拆好分鏡 / 組好提示詞直接拍某一集 | `duanju_list` 找劇與集(一集 = 一個短片專案,拿 `projectId`)→ 還沒建的集用 `duanju_episode_create` 帶劇本建(不扣點)→ `shoot_segments_append` 寫段落(角色名、`location` 跟劇的名冊逐字一致)→ `segment_generate` 先 `dryRun` 報價再開拍 |
 | 九宮格廣告 | `ad_analyze` → `ad_project_save` → `ad_grid_generate` → `ad_video_generate` |
 | 電商短影音 | `ecom_analyze` → `ecom_project_save` → `ecom_video_generate` |
-| 本機檔案當參考素材 | `media_upload_url` → PUT 上傳 → `media_upload_commit` |
+| 本機檔案當參考素材 | `media_upload_url` → PUT 上傳 → `media_upload_commit`。沒有 shell(自己發不出 PUT)就用 `media_upload_open` 開上傳卡,讓使用者在對話裡選檔;卡片說這裡不能直接上傳時,請使用者到站上上傳(圖片、影片到工作室的參考區,聲音到素材庫),回來後用 `media_recent` 找 |
 
 選單裡也有幾個現成流程:**開始使用**(`getting_started`)、**整套拍攝流程**(`cinema_direct`)、**導演審片**(`director_review`)、**劇本健檢**(`script_doctor`)、**拍一場戲**(`shoot_scene`)、**後製改片**(`post_edit`)。
 
