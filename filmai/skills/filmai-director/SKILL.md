@@ -24,7 +24,8 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 | 一部短片從寫劇本一路拍到成片 | `cinema_plan` 先列每一步(寫劇本、拆鏡、建美術卡與出圖、開拍、審片、定出片版與合成)的現況、模式與點數給使用者看、讓他改選,再照順序一步一步跑(選單裡的 `cinema_direct` 是同一套流程) |
 | 看餘額 | `get_balance` |
 | 算一批要花多少點 | `estimate_cost` |
-| 還沒有專案、要從劇本開始 | `short_film_create`(空的 2.5 短片專案,不扣點)→ `script_write` 帶一句話的點子寫劇本(一般寫稿免費;Agent 寫稿付費,回 runId 用 `agent_run_status` 等) |
+| 拍一部短片(還沒有專案) | **預設由你寫劇本、你拆分鏡。** 劇本寫好後 `short_film_create` 帶 `script`(與 `engine`:sd25 預設、每段 30 秒寫 paragraph / sd2 每段 15 秒寫 shots)建專案,不扣點;再照 `help` 的 shot_format(格式)與 shot_method(拆法)拆好,用 `shoot_segments_append` 先帶 `checkOnly: true` 檢查、照回的清單修好再送。使用者明說要站上寫才用 `script_write`,要站上拆才用 `score_analyze` |
+| 拍短劇(直式、一集一集) | `duanju_list` 看已有的劇;開新劇用 `duanju_series_create`(帶 `premise` 開空劇,或帶整部劇本照集標記自動分集;不扣點)→ 還沒建的集用 `duanju_episode_create` 帶你寫好的劇本建 → 照 shot_format 拆好用 `shoot_segments_append`(先 `checkOnly`;角色名、`location` 跟劇的名冊逐字一致)→ `segment_generate` 先 `dryRun` 報價再開拍。細節:`help` 帶 topic duanju |
 | 角色、場景、道具的美術聖經與錨點句 | 拆好總譜、建好美術卡後 `art_bible`(只有 Agent 模式、付費)→ `agent_run_status` 等 |
 | 短片專案的角色 / 場景 / 道具卡:建卡、看缺圖、出圖 | `art_cards_extract` 從劇本建卡(不扣點;只支援短片專案,短劇集回 `unsupported_project`、請使用者到站上的美術站處理;重跑時已經有圖的卡會保留,沒有圖的舊卡有一部分會換新 —— 見下方規矩)→ `list_art_cards` 看哪幾張缺圖、有沒有段落在用 → `art_card_generate` 先帶 `dryRun: true` 報價 → 使用者確認 → 不帶 `dryRun` 送出 → `job_status`。只做第一次出圖,已經有圖或正在生成的會擋下;逾時不要重送,先 `list_art_cards` 看狀態。這是專案的美術卡(開拍時自動帶進參考圖),跟 `darkroom_generate` 出的工作室圖是兩回事 |
 | 要站上的 Agent 從描述寫送件稿 | `prompt_write`(付費,先 `dryRun` 報價) |
@@ -48,12 +49,11 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 | 短片某一段要用哪一條當出片版 | `take_set_final`(只收生成好的 take;整部片合成與下載各段都用出片版,沒定過就是最新拍好的那一條)。`take_ok_cut` 是剪接用的 OK 標記、`take_review` 是審片判讀,都不會改出片版 |
 | 短片接成一支整部片 | `film_cut_render`(每段都要有拍好的片,用的是各段的出片版;最長 5 分鐘,不扣點) |
 | 把成片交給後製剪輯 | `take_download`:工作室作品帶 `assetIds`,短片專案帶 `projectId`(每段主版、照段序編號)。樣片升好的自動換成 1080p;拿回的網址用 `curl -L -o <fileName> <url>` 存下來 |
-| 分鏡存成短片專案 | `list_projects` / `shoot_draft_create` / `shoot_segments_append` / `segment_prompt_push` |
-| 讓總譜做導演分析(拆段、每段目標與節奏) | `score_analyze`(先 `dryRun` 報價,拿 `runtimeByPace` 問使用者節奏 `pace`:slow / narrative / fast;已有段落要使用者同意才帶 `replaceExisting`)→ `score_status` 等到 done,看 `review.cutFindings` 剪輯體檢 |
+| 分鏡存成短片專案 | `list_projects`(回 `targetEngine`)/ `shoot_draft_create` / `shoot_segments_append` / `segment_prompt_push`。寫入前站上照引擎逐段檢查(2.0 系列每段 ≤15 秒、用 shots,台詞寫「名字說:『台詞』」;2.5 每段 ≤30 秒、用 paragraph,台詞寫「名字說:{台詞}」),任一段不過整批不寫、回 segment_format 與修改清單;先帶 `checkOnly: true` 檢查。寫入成功會回分鏡體檢意見,照著改 |
+| 使用者要站上拆鏡(預設是你自己拆) | `score_analyze`(先 `dryRun` 報價,拿 `runtimeByPace` 問使用者節奏 `pace`:slow / narrative / fast;已有段落要使用者同意才帶 `replaceExisting`)→ `score_status` 等到 done,看 `review.cutFindings` 剪輯體檢 |
 | 總譜某一場不滿意(太平、要更緊張、拆成兩段) | `score_rescore_scene` 帶 `sceneIndex` 與一句 `directorNote`,只重拆那一場 → `score_status` |
 | 讀站上總譜某一段的導演內容與送件全文 | `list_segments` → `segment_get` |
 | 在短片專案的某一段上直接開拍(成片進那一段的 take,審片 / 升 1080p / 接整部片都接得上) | `segment_generate` 先帶 `dryRun: true` 報價 → 使用者確認 → 不帶 `dryRun` 送出 → `job_status`。報價回的 `missingReferences` 是這一段綁了卻還沒有圖的卡,先用 `art_card_generate` 補圖再拍(不補也能送,只是少帶那幾張參考圖)。不帶 `prompt` 就送那一段目前的本文;要改稿就從 `segment_get` 的 `submission.body` 改起當 `prompt` 帶。段落標了接上一段(`chainPrev`)時,等上一段 ready 再帶 `extendFromAssetId` 續拍,或帶 `ignoreChain: true` 獨立起拍 |
-| 短劇:拆好分鏡 / 組好提示詞直接拍某一集 | `duanju_list` 找劇與集(一集 = 一個短片專案,拿 `projectId`)→ 還沒建的集用 `duanju_episode_create` 帶劇本建(不扣點)→ `shoot_segments_append` 寫段落(角色名、`location` 跟劇的名冊逐字一致)→ `segment_generate` 先 `dryRun` 報價再開拍 |
 | 九宮格廣告 | `ad_analyze` → `ad_project_save` → `ad_grid_generate` → `ad_video_generate` |
 | 電商短影音 | `ecom_analyze` → `ecom_project_save` → `ecom_video_generate` |
 | 本機檔案當參考素材 | `media_upload_url` → PUT 上傳 → `media_upload_commit`。沒有 shell(自己發不出 PUT)就用 `media_upload_open` 開上傳卡,讓使用者在對話裡選檔;卡片說這裡不能直接上傳時,請使用者到站上上傳(圖片、影片到工作室的參考區,聲音到素材庫),回來後用 `media_recent` 找 |
@@ -62,9 +62,9 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 
 ## 一般模式或站內 Agent
 
-有幾步可以改由站上的 Agent 帶著導演、劇作、美術、提示詞寫法的方法來做(付費、品質較高,你這邊不用裝任何東西):`script_write` 與 `score_analyze` 的 agentMode、`art_bible`、`prompt_write`、`prompt_revise` 的 agentMode。
+寫劇本與拆分鏡預設由你來做(你手上有整段對話與使用者的意圖)。站上另有付費的 Agent 帶著導演、劇作、美術、提示詞寫法的方法來做:`script_write` 與 `score_analyze` 的 agentMode、`art_bible`、`prompt_write`、`prompt_revise` 的 agentMode。
 
-1. 這個對話第一次遇到這種步驟時,先問使用者一次要哪一種,記到對話結束:每次都問我 / 一律不用 / 照建議。
+1. **不要主動問要不要用站內 Agent。** 只有使用者自己說要站上寫、站上拆、或要用站內導演時,才走下面幾步。
 2. 每支都先帶 `dryRun: true`,拿回的 `agentOffer` 列了一般與各 Agent 檔的點數、能不能用(不能用會寫原因)、建議哪一檔。把它列給使用者選;**不要替使用者選付費檔**。
 3. 使用者確認點數才帶 `agentMode` 送出。寫劇本、美術、拆鏡會立刻回 runId,用 `agent_run_status`(拆鏡用 `score_status`)等結果;失敗不扣點,照實告訴使用者。
 4. 支援的客戶端會在對話框裡畫出選模式 / 進度卡;卡片上的按鈕只會把一句話交回給你,照樣先報價再送。
