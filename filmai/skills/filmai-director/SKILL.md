@@ -23,7 +23,7 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 | 不確定用哪支、某個流程怎麼走 | `help`(可帶 topic:studio / digital_double / short_film / cinema_direct / post_edit / ad_ecom / sound / media / billing) |
 | 一部短片從寫劇本一路拍到成片 | `cinema_plan` 先列每一步(寫劇本、拆鏡、建美術卡與出圖、開拍、審片、定出片版與合成)的現況、模式與點數給使用者看、讓他改選,再照順序一步一步跑(選單裡的 `cinema_direct` 是同一套流程) |
 | 看餘額 | `get_balance` |
-| 算一批要花多少點 | `estimate_cost` |
+| 算一批要花多少點 | `estimate_cost`。短片 / 短劇專案裡的開拍一段一個 segment 項(帶 projectId、segmentId;專案畫質與續拍都算進去,上一段還沒拍的續拍段照會續拍估),不要用 video 項 |
 | 拍一部短片(還沒有專案) | **預設由你寫劇本、你拆分鏡。** 劇本寫好後 `short_film_create` 帶 `script`(與 `engine`:sd25 預設、每段 30 秒寫 paragraph / sd2 每段 15 秒寫 shots)建專案,不扣點;再照 `help` 的 shot_format(格式)與 shot_method(拆法)拆好,用 `shoot_segments_append` 先帶 `checkOnly: true` 檢查、照回的清單修好再送。使用者明說要站上寫才用 `script_write`,要站上拆才用 `score_analyze` |
 | 拍短劇(直式、一集一集) | `duanju_list` 看已有的劇;開新劇用 `duanju_series_create`(帶 `premise` 開空劇,或帶整部劇本照集標記自動分集;不扣點)→ 還沒建的集用 `duanju_episode_create` 帶你寫好的劇本建 → 照 shot_format 拆好用 `shoot_segments_append`(先 `checkOnly`;角色名、`location` 跟劇的名冊逐字一致)→ `segment_generate` 先 `dryRun` 報價再開拍。細節:`help` 帶 topic duanju |
 | 角色、場景、道具的美術聖經與錨點句 | 拆好總譜、建好美術卡後 `art_bible`(只有 Agent 模式、付費)→ `agent_run_status` 等 |
@@ -53,7 +53,7 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 | 使用者要站上拆鏡(預設是你自己拆) | `score_analyze`(先 `dryRun` 報價,拿 `runtimeByPace` 問使用者節奏 `pace`:slow / narrative / fast;已有段落要使用者同意才帶 `replaceExisting`)→ `score_status` 等到 done,看 `review.cutFindings` 剪輯體檢 |
 | 總譜某一場不滿意(太平、要更緊張、拆成兩段) | `score_rescore_scene` 帶 `sceneIndex` 與一句 `directorNote`,只重拆那一場 → `score_status` |
 | 讀站上總譜某一段的導演內容與送件全文 | `list_segments` → `segment_get` |
-| 在短片專案的某一段上直接開拍(成片進那一段的 take,審片 / 升 1080p / 接整部片都接得上) | `segment_generate` 先帶 `dryRun: true` 報價 → 使用者確認 → 不帶 `dryRun` 送出 → `job_status`。報價回的 `missingReferences` 是這一段綁了卻還沒有圖的卡,先用 `art_card_generate` 補圖再拍(不補也能送,只是少帶那幾張參考圖)。不帶 `prompt` 就送那一段目前的本文;要改稿就從 `segment_get` 的 `submission.body` 改起當 `prompt` 帶。段落標了接上一段(`chainPrev`)時,等上一段 ready 再帶 `extendFromAssetId` 續拍,或帶 `ignoreChain: true` 獨立起拍 |
+| 在短片專案的某一段上直接開拍(成片進那一段的 take,審片 / 升 1080p / 接整部片都接得上) | `segment_generate` 先帶 `dryRun: true` 報價(整場好幾段一次報總價用 `estimate_cost`,每段一個 segment 項)→ 使用者確認 → 不帶 `dryRun` 送出 → `job_status`。報價回的 `missingReferences` 是這一段綁了卻還沒有圖的卡,先用 `art_card_generate` 補圖再拍(不補也能送,只是少帶那幾張參考圖)。不帶 `prompt` 就送那一段目前的本文;要改稿就從 `segment_get` 的 `submission.body` 改起當 `prompt` 帶。段落標了接上一段(`chainPrev`)時,等上一段 ready 再帶 `extendFromAssetId` 續拍,或帶 `ignoreChain: true` 獨立起拍 |
 | 九宮格廣告 | `ad_analyze` → `ad_project_save` → `ad_grid_generate` → `ad_video_generate` |
 | 電商短影音 | `ecom_analyze` → `ecom_project_save` → `ecom_video_generate` |
 | 本機檔案當參考素材 | `media_upload_url` → PUT 上傳 → `media_upload_commit`。沒有 shell(自己發不出 PUT)就用 `media_upload_open` 開上傳卡,讓使用者在對話裡選檔;卡片說這裡不能直接上傳時,請使用者到站上上傳(圖片、影片到工作室的參考區,聲音到素材庫),回來後用 `media_recent` 找 |
