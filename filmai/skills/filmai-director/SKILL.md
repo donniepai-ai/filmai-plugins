@@ -20,14 +20,14 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 
 | 想做的事 | 工具 |
 | --- | --- |
-| 不確定用哪支、某個流程怎麼走 | `help`(可帶 topic:studio / digital_double / short_film / cinema_direct / post_edit / ad_ecom / sound / media / billing) |
+| 不確定用哪支、某個流程怎麼走 | `help`(可帶 topic:studio / digital_double / short_film / cinema_direct / post_edit / ad_ecom / sound / media / billing / hud) |
 | 一部短片從寫劇本一路拍到成片 | `cinema_plan` 先列每一步(寫劇本、拆鏡、建美術卡與出圖、開拍、審片、定出片版與合成)的現況、模式與點數給使用者看、讓他改選,再照順序一步一步跑(選單裡的 `cinema_direct` 是同一套流程) |
 | 看餘額 | `get_balance` |
 | 算一批要花多少點 | `estimate_cost`。短片 / 短劇專案裡的開拍一段一個 segment 項(帶 projectId、segmentId;專案畫質與續拍都算進去,上一段還沒拍的續拍段照會續拍估),不要用 video 項 |
 | 拍一部短片(還沒有專案) | **預設由你寫劇本、你拆分鏡。** 劇本寫好後 `short_film_create` 帶 `script`(與 `engine`:sd25 預設、每段 30 秒寫 paragraph / sd2 每段 15 秒寫 shots)建專案,不扣點;再照 `help` 的 shot_format(格式)與 shot_method(拆法)拆好,用 `shoot_segments_append` 先帶 `checkOnly: true` 檢查、照回的清單修好再送。使用者明說要站上寫才用 `script_write`,要站上拆才用 `score_analyze` |
 | 拍短劇(直式、一集一集) | `duanju_list` 看已有的劇;開新劇用 `duanju_series_create`(帶 `premise` 開空劇,或帶整部劇本照集標記自動分集;不扣點)→ 還沒建的集用 `duanju_episode_create` 帶你寫好的劇本建 → 照 shot_format 拆好用 `shoot_segments_append`(先 `checkOnly`;角色名、`location` 跟劇的名冊逐字一致)→ `segment_generate` 先 `dryRun` 報價再開拍。細節:`help` 帶 topic duanju |
 | 角色、場景、道具的美術聖經與錨點句 | 拆好總譜、建好美術卡後 `art_bible`(只有 Agent 模式、付費)→ `agent_run_status` 等 |
-| 短片專案的角色 / 場景 / 道具卡:建卡、看缺圖、出圖 | `art_cards_extract` 從劇本建卡(不扣點;只支援短片專案,短劇集回 `unsupported_project`、請使用者到站上的美術站處理;重跑時已經有圖的卡會保留,沒有圖的舊卡有一部分會換新 —— 見下方規矩)→ `list_art_cards` 看哪幾張缺圖、有沒有段落在用 → `art_card_generate` 先帶 `dryRun: true` 報價 → 使用者確認 → 不帶 `dryRun` 送出 → `job_status`。只做第一次出圖,已經有圖或正在生成的會擋下;逾時不要重送,先 `list_art_cards` 看狀態。這是專案的美術卡(開拍時自動帶進參考圖),跟 `darkroom_generate` 出的工作室圖是兩回事 |
+| 短片專案的角色 / 場景 / 道具卡:建卡、看缺圖、出圖、再出一版、換主圖 | `art_cards_extract` 從劇本建卡(不扣點;只支援短片專案,短劇集回 `unsupported_project`、請使用者到站上的美術站處理;重跑時已經有圖的卡會保留,沒有圖的舊卡有一部分會換新 —— 見下方規矩)→ `list_art_cards` 看哪幾張缺圖、有沒有段落在用 → `art_card_generate` 先帶 `dryRun: true` 報價 → 使用者確認 → 不帶 `dryRun` 送出 → `job_status`。預設只替缺圖的卡出第一張,已經有圖或正在生成的會擋下。已經有圖的卡要再出一版,帶 `regenerate: true` 與 `assetIds`(一次最多 4 張,一樣先 `dryRun` 報價),新的一版出來會直接變成主圖;要換回舊的那一版用 `art_card_pin`(不扣點)。逾時不要重送,先 `list_art_cards` 看狀態。這是專案的美術卡(開拍時自動帶進參考圖),跟 `darkroom_generate` 出的工作室圖是兩回事 |
 | 要站上的 Agent 從描述寫送件稿 | `prompt_write`(付費,先 `dryRun` 報價) |
 | 把一段描述變成送件提示詞 | `prompt_compile`;一場戲好幾個鏡頭用 `prompt_compile_batch` 一次編完。回 `sendable` 為 false 就照 `warnings` 修正後重編,不要直接送。描述一律先編再送;自己已經寫好完整送件稿、只想送前看一眼,帶 `checkOnly: true`(只檢查、不改寫) |
 | 使用者想用說的改提示詞(「雨再大一點」) | `prompt_revise`:帶目前的稿與一句 `instruction`,回傳的 `threadId` 帶回來就接著改;免費次數用完(`dryRun` 看 `nextTurnCredits`)先報價再送 |
@@ -42,13 +42,14 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 | 歌曲 / 配樂 | `estimate_cost`(music 項)→ `music_generate`(Suno,一次 2 首;非同步,用 `job_status` 逐首查)。歌詞與曲風自己寫好用 mode `custom`,只給描述用 `describe`;別寫歌手或歌名 |
 | 健檢劇本或一場戲 | `scene_audit` |
 | 審片、標記哪裡不對 | `list_takes` → 看過畫面 → `take_review` |
+| 同一段拍了好幾版要挑、整場照剪接順序看(片場 HUD) | `hud_open`:短片或短劇的一集只帶 `projectId`,段落與各段的 take 由站上現拉(短片專案的美術卡也會自動帶;短劇的一集不帶);什麼參數都不帶 = 打開最近的那一張看板。同一集只開一次,之後有變動用 `hud_update`。卡上的定版:影片是 `take_ok_cut`(短片 / 短劇看板帶 `setFinal: true`,同時設成出片版)、工作室的圖是 `studio_image_pin`、專案美術卡是 `art_card_pin`;「再拍一版」「再出一版」照樣先報價、使用者確認才送。細節先讀 `help` 帶 topic hud |
 | 先拍 480p 樣片省點,確認後再出 1080p | Seedance 2.5 用 480p 拍 → `job_status` 回 `draft` → 使用者看過、說要這一支 → `estimate_cost`(take_upgrade 項,帶 assetId)→ `take_upgrade` → `job_status` 等新的 assetId。成稿照樣片出、不重抽;樣片 7 天內有效、每支只升一次 |
-| 使用者說「這支 OK」「這支要」(標 OK 卡) | `take_ok_cut` 標上(任何生成好的影片都行;站上卡片左上角的 OK 也是同一個標記) |
+| 使用者說「這支 OK」「這支要」(標 OK 卡) | `take_ok_cut` 標上(任何生成好的影片都行;站上卡片左上角的 OK 也是同一個標記)。片場 HUD 上的「用 take N」標的也是它 |
 | 剪輯時「把 OK 卡剪進去」 | `ok_cut_timeline`:帶 `workspaceId`(再加 `folderId` 只剪那一場),順序預設照資料夾與拍攝先後,或用 `assetIds` 照導演計畫的剪接順序 → 照 `steps` 下載到資料夾、存 `.otio` → 匯入 DaVinci Resolve(手上有 Resolve 的 MCP 就用 `MediaPool.ImportTimelineFromFile`) |
 | OK 卡裡的 2.5 樣片最後一起轉 1080p | `ok_cut_list`(或 `ok_cut_timeline` 回的 `upgrade`)看待轉支數與合計點數 → 使用者確認 → 照清單順序逐支 `take_upgrade`(一支回應了再送下一支)→ 都 ready 後再叫一次 `ok_cut_timeline`,時間軸自動換成 1080p |
-| 短片某一段要用哪一條當出片版 | `take_set_final`(只收生成好的 take;整部片合成與下載各段都用出片版,沒定過就是最新拍好的那一條)。`take_ok_cut` 是剪接用的 OK 標記、`take_review` 是審片判讀,都不會改出片版 |
+| 短片某一段要用哪一條當出片版 | `take_set_final`(只收生成好的 take;整部片合成與下載各段都用出片版,沒定過就是最新拍好的那一條)。`take_ok_cut` 不帶 `setFinal` 時只是剪接用的 OK 標記、`take_review` 是審片判讀,都不會改出片版;片場 HUD 在短片 / 短劇看板上的定版會帶 `setFinal: true`,標 OK 的同時把那一支設成出片版 |
 | 短片接成一支整部片 | `film_cut_render`(每段都要有拍好的片,用的是各段的出片版;最長 5 分鐘,不扣點) |
-| 把成片交給後製剪輯 | `take_download`:工作室作品帶 `assetIds`,短片專案帶 `projectId`(每段主版、照段序編號)。樣片升好的自動換成 1080p;拿回的網址用 `curl -L -o <fileName> <url>` 存下來 |
+| 把成片交給後製剪輯 | `take_download`:工作室作品帶 `assetIds`,短片專案帶 `projectId`(每段出片版、照段序編號)。樣片升好的自動換成 1080p;拿回的網址用 `curl -L -o <fileName> <url>` 存下來 |
 | 分鏡存成短片專案 | `list_projects`(回 `targetEngine`)/ `shoot_draft_create` / `shoot_segments_append` / `segment_prompt_push`。寫入前站上照引擎逐段檢查(2.0 系列每段 ≤15 秒、用 shots,台詞寫「名字說:『台詞』」;2.5 每段 ≤30 秒、用 paragraph,台詞寫「名字說:{台詞}」),任一段不過整批不寫、回 segment_format 與修改清單;先帶 `checkOnly: true` 檢查。寫入成功會回分鏡體檢意見,照著改 |
 | 使用者要站上拆鏡(預設是你自己拆) | `score_analyze`(先 `dryRun` 報價,拿 `runtimeByPace` 問使用者節奏 `pace`:slow / narrative / fast;已有段落要使用者同意才帶 `replaceExisting`)→ `score_status` 等到 done,看 `review.cutFindings` 剪輯體檢 |
 | 總譜某一場不滿意(太平、要更緊張、拆成兩段) | `score_rescore_scene` 帶 `sceneIndex` 與一句 `directorNote`,只重拆那一場 → `score_status` |
