@@ -20,7 +20,7 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 
 | 想做的事 | 工具 |
 | --- | --- |
-| 不確定用哪支、某個流程怎麼走 | `help`(可帶 topic:studio / digital_double / short_film / cinema_direct / post_edit / ad_ecom / sound / media / billing / hud) |
+| 不確定用哪支、某個流程怎麼走 | `help`(可帶 topic:studio / digital_double / short_film / cinema_direct / post_edit / ad_ecom / sound / media / billing / hud / cut) |
 | 一部短片從寫劇本一路拍到成片 | `cinema_plan` 先列每一步(寫劇本、拆鏡、建美術卡與出圖、開拍、審片、定出片版與合成)的現況、模式與點數給使用者看、讓他改選,再照順序一步一步跑(選單裡的 `cinema_direct` 是同一套流程) |
 | 看餘額 | `get_balance` |
 | 算一批要花多少點 | `estimate_cost`。短片 / 短劇專案裡的開拍一段一個 segment 項(帶 projectId、segmentId;專案畫質與續拍都算進去,上一段還沒拍的續拍段照會續拍估),不要用 video 項 |
@@ -48,7 +48,8 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 | 剪輯時「把 OK 卡剪進去」 | `ok_cut_timeline`:帶 `workspaceId`(再加 `folderId` 只剪那一場),順序預設照資料夾與拍攝先後,或用 `assetIds` 照導演計畫的剪接順序 → 照 `steps` 下載到資料夾、存 `.otio` → 匯入 DaVinci Resolve(手上有 Resolve 的 MCP 就用 `MediaPool.ImportTimelineFromFile`) |
 | OK 卡裡的 2.5 樣片最後一起轉 1080p | `ok_cut_list`(或 `ok_cut_timeline` 回的 `upgrade`)看待轉支數與合計點數 → 使用者確認 → 照清單順序逐支 `take_upgrade`(一支回應了再送下一支)→ 都 ready 後再叫一次 `ok_cut_timeline`,時間軸自動換成 1080p |
 | 短片某一段要用哪一條當出片版 | `take_set_final`(只收生成好的 take;整部片合成與下載各段都用出片版,沒定過就是最新拍好的那一條)。`take_ok_cut` 不帶 `setFinal` 時只是剪接用的 OK 標記、`take_review` 是審片判讀,都不會改出片版;片場 HUD 在短片 / 短劇看板上的定版會帶 `setFinal: true`,標 OK 的同時把那一支設成出片版 |
-| 短片接成一支整部片 | `film_cut_render`(每段都要有拍好的片,用的是各段的出片版;最長 5 分鐘,不扣點) |
+| 短片接成一支整部片 | `film_cut_render`(每段都要有拍好的片,用的是各段的出片版;最長 5 分鐘,不扣點)。在剪輯台或粗剪卡上剪過的片它不接 —— 請使用者到站上剪輯台輸出,或用 `film_cut_timeline` 把時間軸帶進剪輯軟體 |
+| 把整部片連起來看節奏、換順序、修頭尾、拿掉一段(粗剪) | 短片或短劇的一集:`film_cut_timeline` 帶 `projectId`(不扣點),對話裡會畫成粗剪卡,使用者在卡上連播、換順序、修頭尾、拿掉或加回一段,卡片自己存。使用者用說的(「第 3 段修頭半秒」「拿掉第 8 段」)就你來改:先 `film_cut_timeline` 拿 `revision` 與每段的入出點,改完用 `cut_plan_save` 帶 `expectedRevision` 存**整份**;回 `conflict` 就重讀再改,不要原樣重送。改的是站上剪輯台那一份,每段用哪一支、音量、配樂不會動。細節先讀 `help` 帶 topic cut |
 | 把成片交給後製剪輯 | `take_download`:工作室作品帶 `assetIds`,短片專案帶 `projectId`(每段出片版、照段序編號)。樣片升好的自動換成 1080p;拿回的網址用 `curl -L -o <fileName> <url>` 存下來 |
 | 分鏡存成短片專案 | `list_projects`(回 `targetEngine`)/ `shoot_draft_create` / `shoot_segments_append` / `segment_prompt_push`。寫入前站上照引擎逐段檢查(2.0 系列每段 ≤15 秒、用 shots,台詞寫「名字說:『台詞』」;2.5 每段 ≤30 秒、用 paragraph,台詞寫「名字說:{台詞}」),任一段不過整批不寫、回 segment_format 與修改清單;先帶 `checkOnly: true` 檢查。寫入成功會回分鏡體檢意見,照著改 |
 | 使用者要站上拆鏡(預設是你自己拆) | `score_analyze`(先 `dryRun` 報價,拿 `runtimeByPace` 問使用者節奏 `pace`:slow / narrative / fast;已有段落要使用者同意才帶 `replaceExisting`)→ `score_status` 等到 done,看 `review.cutFindings` 剪輯體檢 |
@@ -58,6 +59,7 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 | 九宮格廣告 | `ad_analyze` → `ad_project_save` → `ad_grid_generate` → `ad_video_generate` |
 | 電商短影音 | `ecom_analyze` → `ecom_project_save` → `ecom_video_generate` |
 | 本機檔案當參考素材 | `media_upload_url` → PUT 上傳 → `media_upload_commit`。沒有 shell(自己發不出 PUT)就用 `media_upload_open` 開上傳卡,讓使用者在對話裡選檔;卡片說這裡不能直接上傳時,請使用者到站上上傳(圖片、影片到工作室的參考區,聲音到素材庫),回來後用 `media_recent` 找 |
+| 用工作室牆上的圖片 / 影片當參考(使用者在站上傳上牆的也算) | `studio_assets_list` 帶 `workspaceId`(用 `studio_workspaces_list` 拿;可再帶 `folderId`、`kind`,或 `source: "upload"` 只看上傳的),不扣點。回的 `url` 直接放進 `quick_shoot_generate` 的 `referenceImages` / `referenceVideos` 或 `darkroom_generate` 的 `sourceImageUrls`;要接著某一支生成的影片拍,帶 `firstFrameFromAssetId`。使用者沒指名要用哪幾個時,先把清單(名字、張數)給他確認,不要自己全拿去用 |
 
 選單裡也有幾個現成流程:**開始使用**(`getting_started`)、**整套拍攝流程**(`cinema_direct`)、**導演審片**(`director_review`)、**劇本健檢**(`script_doctor`)、**拍一場戲**(`shoot_scene`)、**後製改片**(`post_edit`)。
 
