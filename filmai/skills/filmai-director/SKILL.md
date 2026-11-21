@@ -9,7 +9,7 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 
 ## 剛連上:先開場,再開工
 
-這個對話第一次用到電影大師、使用者又還沒說要做什麼時(剛連上、打招呼、問「能做什麼」),先呼叫 `welcome`(locale 帶使用者說話的語言:zh / en / ja / ko),然後只回一到兩句:目前點數,加一句把回傳的三個起手式問出來(也可以直接丟一個想法)。畫面上出現開場卡時,不要把卡上的內容再念一遍;使用者問「還能做什麼」才講其他路線。使用者按了卡片或回了選項之後,照那一項的 helpTopic 呼叫 `help` 讀步驟再開始;支援選單的 client 也可以請他點 `getting_started`。他選之前不要扣點或建專案。使用者一開口就給了明確任務,就跳過開場直接做。
+這個對話第一次用到電影大師、使用者又還沒說要做什麼時(剛連上、打招呼、問「能做什麼」),先呼叫 `welcome`(locale 帶使用者說話的語言:zh / en / ja / ko),然後只回一到兩句:目前點數,加一句把回傳的四個起手式問出來(也可以直接丟一個想法)。畫面上出現開場卡時,不要把卡上的內容再念一遍;使用者問「還能做什麼」才講其他路線。使用者按了卡片或回了選項之後,照那一項的 helpTopic 呼叫 `help` 讀步驟再開始;支援選單的 client 也可以請他點 `getting_started`。他選之前不要扣點或建專案。使用者一開口就給了明確任務,就跳過開場直接做。
 
 ## 開工前先讀兩份現況
 
@@ -39,7 +39,7 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 | 作品放進指定的工作室工作區 | 生成時帶 `workspaceName`(同名沿用、沒有就新建);或 `studio_workspaces_list` / `studio_workspace_create` 拿 id 再帶 `workspaceId` |
 | 同一部戲分場整理(第 1 場、第 2 場…) | 同一個工作區、每場一個資料夾:生成 / 上傳時帶 `workspaceName` + `folderName`(例:「哭替」+「第1場」),**不要一場開一個工作區**。已經生好的用 `studio_assets_move_to_folder` 移進夾子;`studio_folders_list` 看有哪些夾。已經被拆成好幾個工作區的,用 `studio_assets_move_to_workspace` 搬回同一個工作區(可同時帶 `folderName`) |
 | 對白 / 旁白 | `list_voices` → `sound_generate`(同步回來,不必輪 `job_status`) |
-| 歌曲 / 配樂 | `estimate_cost`(music 項)→ `music_generate`(Suno,一次 2 首;非同步,用 `job_status` 逐首查)。歌詞與曲風自己寫好用 mode `custom`,只給描述用 `describe`;別寫歌手或歌名 |
+| 歌曲 / 配樂 | `estimate_cost`(music 項)→ `music_generate`(Suno,一次 2 首;非同步,用 `job_status` 逐首查)。歌詞與曲風自己寫好用 mode `custom`,只給描述用 `describe`;別寫歌手或歌名。要把一首歌寫長、同一個歌聲繼續唱:`estimate_cost`(music_extend 項)→ `music_extend`(只寫接下去的歌詞,回 2 個完整版) |
 | 健檢劇本或一場戲 | `scene_audit` |
 | 審片、標記哪裡不對 | `list_takes` → 看過畫面 → `take_review` |
 | 同一段拍了好幾版要挑、整場照剪接順序看(片場 HUD) | `hud_open`:短片或短劇的一集只帶 `projectId`,段落與各段的 take 由站上現拉(短片專案的美術卡也會自動帶;短劇的一集不帶);什麼參數都不帶 = 打開最近的那一張看板。同一集只開一次,之後有變動用 `hud_update`。卡上的定版:影片是 `take_ok_cut`(短片 / 短劇看板帶 `setFinal: true`,同時設成出片版)、工作室的圖是 `studio_image_pin`、專案美術卡是 `art_card_pin`;「再拍一版」「再出一版」照樣先報價、使用者確認才送。細節先讀 `help` 帶 topic hud |
@@ -87,11 +87,14 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 
 ## 規矩
 
-- **先報價,再生成。** 會扣點的只有 `quick_shoot_generate`、`darkroom_generate`、`digital_double_generate`、`sound_generate`、`music_generate`、`ad_grid_generate`、`ad_video_generate`、`ecom_video_generate`、樣片升 1080p 的 `take_upgrade`,以及長劇本或帶 agentMode 的 `score_analyze`、短片段落開拍的 `segment_generate`、短片美術卡出圖的 `art_card_generate`、Agent 模式的 `script_write`、`art_bible`、`prompt_write`、帶 agentMode 的 `prompt_revise`(這幾支用自己的 `dryRun` 報價)。使用者沒看過價錢之前,先跑 `estimate_cost` 給他看總數與餘額,他確認了才送。
+- **先報價,再生成。** 會扣點的只有 `quick_shoot_generate`、`darkroom_generate`、`digital_double_generate`、`sound_generate`、`music_generate`、延長歌曲的 `music_extend`、`ad_grid_generate`、`ad_video_generate`、`ecom_video_generate`、樣片升 1080p 的 `take_upgrade`,以及長劇本或帶 agentMode 的 `score_analyze`、短片段落開拍的 `segment_generate`、短片美術卡出圖的 `art_card_generate`、Agent 模式的 `script_write`、`art_bible`、`prompt_write`、帶 agentMode 的 `prompt_revise`(這幾支用自己的 `dryRun` 報價)。使用者沒看過價錢之前,先跑 `estimate_cost` 給他看總數與餘額,他確認了才送。
 - **同一批作品放同一個工作區。** 使用者說了專案或主題名稱,每一筆 `quick_shoot_generate` / `darkroom_generate` 都帶同一個 `workspaceName`;都不帶時影片與圖片會落在不同的預設工作區。回傳 `workspaceCreated: true` 時告訴使用者新建了哪個工作區(名字打錯會多建一個)。
 - **參考素材只收使用者自己的素材網址。** 外部網址先走上傳兩步;素材庫、定妝庫的網址可以直接用。
 - **樣片要使用者確認過才升。** `take_upgrade` 是定版:升出來的就是那支樣片的 1080p,不會變好或變差。使用者沒看過、沒說要這一支,不要升。
-- **逾時不要直接重送。** 那一發多半已經生出來、也扣過點了。先用 `job_status` 或 `list_sounds` 查(`take_upgrade` 逾時就查樣片的 `draft.upgradedAssetId`);`sound_generate` 重送要帶原本的 `nonce`。
+- **送件帶 `nonce`,逾時帶同一個再問。** `quick_shoot_generate`、`segment_generate`、`darkroom_generate`、`digital_double_generate`、`take_upgrade`、`sound_generate`、`music_generate`、`music_extend` 都收 `nonce`(自己取的隨機字串,8–64 字):每一筆新的生成用新的,沒收到回應就帶同一個重送。影片與圖片已經送出的會回 duplicate: true 與原本的 assetId、不再扣點;回 nonce_in_progress 是上一發還在送,等幾秒再問;回 nonce_unknown 是上一發結果不明,先用 `job_status`、`list_takes` 或 `studio_assets_list` 查,確定沒送出才換新的。沒帶 `nonce` 時逾時不要直接重送 —— 那一發多半已經生出來、也扣過點了(`take_upgrade` 逾時查樣片的 `draft.upgradedAssetId`;聲音查 `list_sounds`)。
+- **等片帶 `waitSec`。** `job_status` 帶 `waitSec: 50`,還在生成就由站上等最多 50 秒,好了立刻回;時間到還沒好就再呼叫一次接著等,不要每隔幾秒自己問。
+- **失敗看 code。** 工具失敗一律回 `{ ok: false, code, reason }`:reason 照實轉告使用者;rate_limited 等一下再試;plan_required、gen_not_allowed 重試沒用,請使用者處理方案或換一把允許生成的金鑰;daily_cap_reached 是今天的 MCP 扣點上限到了;internal_error 是站上出錯、可能已經執行,先查再決定要不要重送。其餘是各工具自己的 code,照工具說明處理(細節:`help` 帶 topic billing)。
+- **對話卡照使用者的語言。** 會畫成對話卡的工具(生成與報價、`job_status`、片場、粗剪、全片總覽、改稿、Agent 卡)都收 `locale`;使用者說的不是中文就帶(en / ja / ko),不帶是中文。
 - **存到使用者電腦時用 `fileName`。** `job_status` / `list_takes` / `take_download` 都會回建議檔名 `fileName`。可以照使用者的意思換掉前半段，但 `isDraft: true` 的樣片一定要保留 `_draft` 後綴，副檔名也不要改（MOV 就是 `.mov`）。例：`森林騎乘-a1b2c3d4_draft.mp4` → `第3場_追逐_draft.mp4`。
 - **審片要真的看過畫面。** 沒看過就不要寫 `take_review`;使用者自己點過的判讀是權威,不要推翻,你的判讀只是建議。
 - **`script_write` 會整份換掉專案劇本。** 專案已有劇本時,先告訴使用者,他同意了才帶 `replaceExisting: true`。
@@ -99,7 +102,6 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 - **`art_cards_extract` 重跑會換掉一部分還沒有圖的卡。** 已經有圖的保留;還沒有圖、但 `art_bible` 寫回過或使用者改過錨點句的卡,這次又抽到同一個角色 / 場景 / 道具就原卡保留(提示詞、鎖定詞、錨點句不動);其餘沒有圖的舊卡換成這次分析的結果,劇本裡已經沒有的歸檔。這次新建的卡不會照美術聖經寫(要再跑一次付費的 `art_bible` 才會補上)。專案已經有卡時,先用 `list_art_cards` 看哪幾張還沒有圖、告訴使用者哪些可能被換掉,他同意了才重跑。
 - **劇本改寫要使用者點頭。** `scene_audit` 給的是診斷與修法,先列給他選,他同意了才動筆。
 - 回傳帶 `lowBalance` 時提醒使用者餘額快不夠了。
-- `feature_*` 長片工具目前只開放內部測試,一般使用者不要呼叫。
 
 ## 連線
 
