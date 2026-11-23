@@ -9,7 +9,7 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 
 ## 剛連上:先開場,再開工
 
-這個對話第一次用到電影大師、使用者又還沒說要做什麼時(剛連上、打招呼、問「能做什麼」),先呼叫 `welcome`(locale 帶使用者說話的語言:zh / en / ja / ko),然後只回一到兩句:目前點數,加一句把回傳的四個起手式問出來(也可以直接丟一個想法)。畫面上出現開場卡時,不要把卡上的內容再念一遍;使用者問「還能做什麼」才講其他路線。使用者按了卡片或回了選項之後,照那一項的 helpTopic 呼叫 `help` 讀步驟再開始;支援選單的 client 也可以請他點 `getting_started`。他選之前不要扣點或建專案。使用者一開口就給了明確任務,就跳過開場直接做。
+這個對話第一次用到電影大師、使用者又還沒說要做什麼時(剛連上、打招呼、問「能做什麼」),先呼叫 `welcome`(locale 帶使用者說話的語言:zh / en / ja / ko),然後只回一到兩句:目前點數,加一句把回傳的起手式問出來(也可以直接丟一個想法)。使用者選「交給站內導演」就是他自己要用站內 Agent:照 cinema_direct 每一步帶 dryRun,把 agentOffer 各檔列給他選。畫面上出現開場卡時,不要把卡上的內容再念一遍;使用者問「還能做什麼」才講其他路線。使用者按了卡片或回了選項之後,照那一項的 helpTopic 呼叫 `help` 讀步驟再開始;支援選單的 client 也可以請他點 `getting_started`。他選之前不要扣點或建專案。使用者一開口就給了明確任務,就跳過開場直接做。
 
 ## 開工前先讀兩份現況
 
@@ -87,7 +87,7 @@ description: 電影大師(filmai.ai)的導演指南 —— 使用者要在電影
 
 ## 規矩
 
-- **先報價,再生成。** 會扣點的只有 `quick_shoot_generate`、`darkroom_generate`、`digital_double_generate`、`sound_generate`、`music_generate`、延長歌曲的 `music_extend`、`ad_grid_generate`、`ad_video_generate`、`ecom_video_generate`、樣片升 1080p 的 `take_upgrade`,以及長劇本或帶 agentMode 的 `score_analyze`、短片段落開拍的 `segment_generate`、短片美術卡出圖的 `art_card_generate`、Agent 模式的 `script_write`、`art_bible`、`prompt_write`、帶 agentMode 的 `prompt_revise`(這幾支用自己的 `dryRun` 報價)。使用者沒看過價錢之前,先跑 `estimate_cost` 給他看總數與餘額,他確認了才送。
+- **先報價,再生成。** 會扣點的只有 `quick_shoot_generate`、`darkroom_generate`、`digital_double_generate`、`sound_generate`、`music_generate`、延長歌曲的 `music_extend`、`ad_grid_generate`、`ad_video_generate`、`ecom_video_generate`、樣片升 1080p 的 `take_upgrade`,以及長劇本或帶 agentMode 的 `score_analyze`、短片段落開拍的 `segment_generate`、短片美術卡出圖的 `art_card_generate`、Agent 模式的 `script_write`、`art_bible`、`prompt_write`、帶 agentMode 的 `prompt_revise`(這幾支用自己的 `dryRun` 報價),以及照報價單整批送件的 `batch_submit`(報價是 `batch_prepare`)。使用者沒看過價錢之前,先跑 `estimate_cost` 給他看總數與餘額,他確認了才送。參數都定好、要一次送好幾支時,改用 `batch_prepare` 封存並報價:使用者在報價卡上按「送出」,卡片直接送件,對話裡沒有新訊息 —— 不要再自己送一次;要查結果就 `batch_submit` 帶同一個 batchId(不會重複扣點)。
 - **同一批作品放同一個工作區。** 使用者說了專案或主題名稱,每一筆 `quick_shoot_generate` / `darkroom_generate` 都帶同一個 `workspaceName`;都不帶時影片與圖片會落在不同的預設工作區。回傳 `workspaceCreated: true` 時告訴使用者新建了哪個工作區(名字打錯會多建一個)。
 - **參考素材只收使用者自己的素材網址。** 外部網址先走上傳兩步;素材庫、定妝庫的網址可以直接用。
 - **樣片要使用者確認過才升。** `take_upgrade` 是定版:升出來的就是那支樣片的 1080p,不會變好或變差。使用者沒看過、沒說要這一支,不要升。
